@@ -1,0 +1,5 @@
+<nav class="pagination" aria-label="Pagination · <%= pageTitle %>">
+  <span class="result-range"><%= resultTotal ? ((page-1)*50+1).toLocaleString('fr-FR') : 0 %>–<%= Math.min(page*50,resultTotal).toLocaleString('fr-FR') %> sur <%= resultTotal.toLocaleString('fr-FR') %></span>
+  <div><% if(page>1){ %><a class="page-button" href="<%= pageUrl(page-1) %>#results" rel="prev">← Précédent</a><% } else { %><span class="page-button" aria-disabled="true">← Précédent</span><% } %><span class="pagination-page" tabindex="-1">Page <%= page %> / <%= pages %></span><% if(page<pages){ %><a class="page-button page-next" href="<%= pageUrl(page+1) %>#results" rel="next">Suivant →</a><% } else { %><span class="page-button page-next" aria-disabled="true">Suivant →</span><% } %></div>
+  <span class="pagination-feedback" role="status" aria-live="polite" hidden></span>
+</nav>

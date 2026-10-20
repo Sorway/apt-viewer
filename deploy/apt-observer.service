@@ -1,0 +1,26 @@
+[Unit]
+Description=apt-viewer - supervision apt-cacher-ng
+After=network.target apt-cacher-ng.service
+
+[Service]
+Type=simple
+User=apt-observer
+Group=apt-observer
+WorkingDirectory=/opt/apt-observer
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node --env-file=/etc/apt-observer.env /opt/apt-observer/src/server.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

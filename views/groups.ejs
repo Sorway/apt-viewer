@@ -1,0 +1,16 @@
+<%- include('partials/shell') %>
+<%- include('partials/filters') %>
+<section class="panel group-panel" id="results" aria-labelledby="group-title">
+  <div class="table-heading"><h3 id="group-title"><%= pageTitle %> <span><%= resultTotal.toLocaleString('fr-FR') %></span></h3></div>
+  <div class="scroll page-table" tabindex="0" role="region" aria-label="<%= pageTitle %>">
+    <table><thead><tr><th scope="col"><%= screen==='clients'?'Adresse IP / nom DNS':'Dépôt' %></th><th scope="col">Entrant</th><th scope="col">Sortant</th><th scope="col">Événements</th><th scope="col">Dernière activité</th></tr></thead><tbody>
+      <% for(const row of groupRows){ %><tr>
+        <td><a href="<%= filterUrl(screen==='clients'?{ip:row.name}:{endpoint:row.name},'/activity') %>" <% if(screen==='clients'){ %>data-client-ip="<%= row.name %>"<% } %> title="Voir l’activité"><%= row.name %><%= screen==='clients'&&clientName(row.name)?' ('+clientName(row.name)+')':'' %></a></td>
+        <td class="nowrap"><%= bytes(row.in) %></td><td class="nowrap"><%= bytes(row.out) %></td><td><%= row.count.toLocaleString('fr-FR') %></td><td class="nowrap"><%= date(row.last) %></td>
+      </tr><% } %>
+      <% if(!groupRows.length){ %><tr><td colspan="5">Aucune donnée dans cette sélection.<% if(activeFilters.length){ %> <a href="<%= basePath %>">Effacer les filtres</a><% } %></td></tr><% } %>
+    </tbody></table>
+  </div>
+  <%- include('partials/pagination') %>
+</section>
+<%- include('partials/end') %>

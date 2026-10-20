@@ -1,0 +1,15 @@
+<%- include('partials/shell') %>
+<section class="cards" aria-label="Statistiques">
+  <article data-tone="out"><small>Envoyé aux clients</small><h2><%= bytes(summary.outgoing) %></h2></article>
+  <article data-tone="in"><small>Reçu de l’amont</small><h2><%= bytes(summary.incoming) %></h2></article>
+  <article data-tone="clients"><small>Clients</small><h2><a class="stat-link" href="<%= filterUrl({},'/clients') %>" aria-label="<%= summary.clients.length %> clients"><%= summary.clients.length %><span aria-hidden="true">↗</span></a></h2></article>
+  <article data-tone="endpoints"><small>Dépôts</small><h2><a class="stat-link" href="<%= filterUrl({},'/endpoints') %>" aria-label="<%= summary.endpoints.length %> dépôts"><%= summary.endpoints.length %><span aria-hidden="true">↗</span></a></h2></article>
+</section>
+<%- include('partials/filters') %>
+
+<div class="overview-charts">
+  <%- include('partials/activity-chart',{chart:clientActivity,chartId:'client-activity',title:'Activité par client',column:'Client',clientChart:true}) %>
+  <%- include('partials/activity-chart',{chart:destinationActivity,chartId:'destination-activity',title:'Activité par destination',column:'Destination',clientChart:false}) %>
+</div>
+<div class="overview-action"><a class="button-secondary" href="<%= filterUrl({},'/activity') %>">Voir toute l’activité →</a></div>
+<%- include('partials/end') %>
