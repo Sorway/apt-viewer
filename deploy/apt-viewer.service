@@ -4,11 +4,11 @@ After=network.target apt-cacher-ng.service
 
 [Service]
 Type=simple
-User=apt-observer
-Group=apt-observer
-WorkingDirectory=/opt/apt-observer
+User=apt-viewer
+Group=apt-viewer
+WorkingDirectory=/opt/apt-viewer
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node --env-file=/etc/apt-observer.env /opt/apt-observer/src/server.js
+ExecStart=/opt/apt-viewer/runtime/bin/node --env-file=/etc/apt-viewer.env /opt/apt-viewer/src/server.js
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

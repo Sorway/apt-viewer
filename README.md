@@ -29,11 +29,32 @@ Recherche par IP ou nom DNS, filtres par période, thèmes clair et sombre, actu
 
 ## Démarrage
 
-**Node.js 24 et npm.**
-
 ```sh
 git clone https://github.com/Sorway/apt-viewer.git
 cd apt-viewer
+```
+
+### Docker
+
+```sh
+docker compose up -d --build
+```
+
+Ouvrir **[localhost:3000](http://127.0.0.1:3000)**. Le répertoire `/var/log/apt-cacher-ng` du serveur est monté en lecture seule.
+
+Pour essayer avec les données de démonstration :
+
+```sh
+docker compose -f compose.yaml -f compose.demo.yaml up -d --build
+```
+
+[Configuration Docker, permissions et commandes →](docs/docker.md)
+
+### Node.js
+
+**Node.js 24 et npm.**
+
+```sh
 npm ci
 npm run demo
 ```
@@ -75,6 +96,8 @@ L’application lit directement le journal et conserve les données en mémoire.
 Les limites de lecture, le rafraîchissement et les autres options sont détaillés dans la [référence](docs/reference.md#configuration).
 
 ## Déploiement
+
+Le guide [**Docker Compose**](docs/docker.md) couvre le montage des journaux, les permissions et les mises à jour de l’image.
 
 Le guide [**Debian / Ubuntu**](docs/deployment.md) couvre l’installation, les permissions du journal, systemd et Nginx avec TLS et authentification.
 

@@ -52,11 +52,11 @@ function setupPagination() {
       const scroll = savedPosition || readScrollPosition();
       if (historyEntry) {
         window.history.replaceState(
-          { ...window.history.state, aptObserverPagination: readScrollPosition() },
+          { ...window.history.state, aptViewerPagination: readScrollPosition() },
           '',
           window.location.href,
         );
-        window.history.pushState({ aptObserverPagination: scroll }, '', url.href);
+        window.history.pushState({ aptViewerPagination: scroll }, '', url.href);
       }
       current.replaceWith(next);
       updatePageStatus(nextDocument);
@@ -109,7 +109,7 @@ function setupPagination() {
     }
     navigate(new URL(window.location.href), {
       historyEntry: false,
-      savedPosition: event.state?.aptObserverPagination || { x: 0, y: 0, tableX: 0, tableY: 0 },
+      savedPosition: event.state?.aptViewerPagination || { x: 0, y: 0, tableX: 0, tableY: 0 },
     });
   });
 }

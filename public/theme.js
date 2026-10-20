@@ -2,7 +2,7 @@
 (() => {
   let saved;
   try {
-    saved = localStorage.getItem('apt-observer-theme');
+    saved = localStorage.getItem('apt-viewer-theme');
   } catch {}
   document.documentElement.dataset.theme = ['light', 'dark'].includes(saved)
     ? saved

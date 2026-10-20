@@ -37,3 +37,27 @@ jobs:
           for file in src/*.js public/*.js; do
             node --check "$file"
           done
+
+  docker:
+    name: Image Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Vérifier Compose
+        run: docker compose -f compose.yaml -f compose.demo.yaml config --quiet
+
+      - name: Construire et démarrer la démonstration
+        run: docker compose -f compose.yaml -f compose.demo.yaml up --build --detach --wait --wait-timeout 60
+
+      - name: Afficher les journaux en cas d’échec
+        if: failure()
+        run: docker compose -f compose.yaml -f compose.demo.yaml logs
+
+      - name: Arrêter les conteneurs
+        if: always()
+        run: docker compose -f compose.yaml -f compose.demo.yaml down

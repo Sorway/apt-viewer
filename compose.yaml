@@ -1,0 +1,23 @@
+services:
+  apt-viewer:
+    build: .
+    init: true
+    restart: unless-stopped
+    hostname: ${APT_VIEWER_HOSTNAME:-apt-cache}
+    ports:
+      - "127.0.0.1:${APT_VIEWER_PORT:-3000}:3000"
+    environment:
+      LOG_PATH: /logs/${APT_LOG_FILE:-apt-cacher.log}
+      POLL_MS: ${POLL_MS:-5000}
+      MAX_BYTES: ${MAX_BYTES:-16777216}
+      MAX_EVENTS: ${MAX_EVENTS:-50000}
+    group_add:
+      - "${APT_LOG_GID:-1000}"
+    volumes:
+      - type: bind
+        source: ${APT_LOG_DIR:-/var/log/apt-cacher-ng}
+        target: /logs
+        read_only: true
+        bind:
+          create_host_path: false
+    read_only: true

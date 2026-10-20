@@ -13,7 +13,7 @@ function setupThemeSwitch() {
       const theme = button.dataset.themeChoice;
       document.documentElement.dataset.theme = theme;
       try {
-        localStorage.setItem('apt-observer-theme', theme);
+        localStorage.setItem('apt-viewer-theme', theme);
       } catch {}
       updateButtons();
     });
