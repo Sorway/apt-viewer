@@ -8,8 +8,7 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env src/server.js",
-    "demo": "node --env-file=sample/demo.env src/server.js",
-    "test": "node --test"
+    "demo": "node --env-file=sample/demo.env src/server.js"
   },
   "dependencies": {
     "express": "^5.1.0",

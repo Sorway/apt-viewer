@@ -1,28 +1,73 @@
-import {isIP} from 'node:net';
+import { isIP } from 'node:net';
+
 export function parseLine(line) {
-  // Preserve pipes inside the resource: only the first four delimiters are structural.
-  const m = /^(\d+(?:\.\d+)?)\|([IOE])\|(\d+)\|([^|]+)\|(.+)$/.exec(line.replace(/\r$/, ''));
-  if (!m) return null;
-  const seconds = Number(m[1]), bytes = Number(m[3]), ip = m[4].trim();
-  if (!isIP(ip) || !Number.isSafeInteger(bytes) || seconds < 0 || seconds > 8640000000000 || !Number.isFinite(seconds)) return null;
-  let resource = m[5];
-  if (resource.length > 16384 || /[\x00-\x1f\x7f]/.test(resource)) return null;
+  // Only the first four pipes are separators; a resource may contain more.
+  const match = /^(\d+(?:\.\d+)?)\|([IOE])\|(\d+)\|([^|]+)\|(.+)$/.exec(line.replace(/\r$/, ''));
+  if (!match) return null;
+
+  const [, timestamp, direction, byteCount, address, rawResource] = match;
+  const seconds = Number(timestamp);
+  const bytes = Number(byteCount);
+  const ip = address.trim();
+
+  if (!isIP(ip) || !Number.isSafeInteger(bytes)) return null;
+  if (!Number.isFinite(seconds) || seconds < 0 || seconds > 8640000000000) return null;
+  if (rawResource.length > 16384 || /[\x00-\x1f\x7f]/.test(rawResource)) return null;
+
+  let resource = rawResource;
   let failure;
-  if (m[2] === 'E') {
+  if (direction === 'E') {
     const detail = /^(.*?) \[(.+)\]$/.exec(resource);
-    if (detail && detail[1]) resource = detail[1];
-    const reason = detail && detail[1] ? detail[2] : 'Motif non fourni par le journal';
-    const http = /\bHTTP error,\s*code:\s*([45]\d{2})\b/i.exec(reason);
-    failure = {reason, statusCode: http ? Number(http[1]) : null};
+    let reason = 'Motif non fourni par le journal';
+    if (detail && detail[1]) {
+      resource = detail[1];
+      reason = detail[2];
+    }
+    const httpError = /\bHTTP error,\s*code:\s*([45]\d{2})\b/i.exec(reason);
+    failure = { reason, statusCode: httpError ? Number(httpError[1]) : null };
   }
+
   let endpoint = resource.split('/')[0] || '(local)';
-  try { if (/^https?:\/\//i.test(resource)) endpoint = new URL(resource).host; } catch { return null; }
-  return {time:Math.floor(seconds*1000),direction:m[2],bytes,ip,resource,endpoint,...failure};
+  if (/^https?:\/\//i.test(resource)) {
+    try {
+      endpoint = new URL(resource).host;
+    } catch {
+      return null;
+    }
+  }
+
+  return { time: Math.floor(seconds * 1000), direction, bytes, ip, resource, endpoint, ...failure };
 }
+
+function addToGroup(groups, name, event) {
+  if (!groups.has(name)) {
+    groups.set(name, { name, in: 0, out: 0, count: 0, last: 0 });
+  }
+  const group = groups.get(name);
+  if (event.direction === 'I') group.in += event.bytes;
+  if (event.direction === 'O') group.out += event.bytes;
+  group.count++;
+  group.last = Math.max(group.last, event.time);
+}
+
 export function summarize(events) {
-  const groups = key => Object.values(events.reduce((a,e) => {
-    const k=e[key]; const g=a[k] ||= {name:k,in:0,out:0,count:0,last:0};
-    if(e.direction==='I')g.in+=e.bytes; else if(e.direction==='O')g.out+=e.bytes; g.count++; g.last=Math.max(g.last,e.time); return a;
-  },Object.create(null))).sort((a,b)=>b.out-a.out);
-  return {incoming:events.filter(e=>e.direction==='I').reduce((a,e)=>a+e.bytes,0),outgoing:events.filter(e=>e.direction==='O').reduce((a,e)=>a+e.bytes,0),clients:groups('ip'),endpoints:groups('endpoint')};
+  let incoming = 0;
+  let outgoing = 0;
+  const clients = new Map();
+  const endpoints = new Map();
+
+  for (const event of events) {
+    if (event.direction === 'I') incoming += event.bytes;
+    if (event.direction === 'O') outgoing += event.bytes;
+    addToGroup(clients, event.ip, event);
+    addToGroup(endpoints, event.endpoint, event);
+  }
+
+  const byOutgoingVolume = (a, b) => b.out - a.out;
+  return {
+    incoming,
+    outgoing,
+    clients: [...clients.values()].sort(byOutgoingVolume),
+    endpoints: [...endpoints.values()].sort(byOutgoingVolume),
+  };
 }

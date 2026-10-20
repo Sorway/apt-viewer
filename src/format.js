@@ -1,4 +1,4 @@
-const number = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 1});
+const number = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 const httpLabels = {
   400: 'Requête incorrecte',
   401: 'Authentification requise',
@@ -18,8 +18,14 @@ export function formatBytes(value) {
   if (!Number.isFinite(value) || value < 0) return '—';
   const units = ['o', 'Kio', 'Mio', 'Gio', 'Tio', 'Pio'];
   let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit++; }
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
   // Avoid displaying 1 024 Kio instead of 1 Mio after rounding.
-  if (Math.round(value * 10) / 10 >= 1024 && unit < units.length - 1) { value /= 1024; unit++; }
+  if (Math.round(value * 10) / 10 >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
   return number.format(value) + ' ' + units[unit];
 }

@@ -11,34 +11,73 @@
   <script src="<%= assetUrl('pagination.js') %>" defer></script>
 </head>
 <body>
-<a class="skip-link" href="#main">Aller au contenu</a>
-<div class="app-bar">
-  <div class="brand">
-    <img src="/assets/brand/logo.svg" alt="" width="28" height="28">
-    <span class="logo">apt-viewer</span>
-  </div>
-  <nav class="primary-nav" aria-label="Navigation principale">
-    <% for(const item of navigation){ %>
-    <a href="<%= filterUrl({},item.path) %>" class="<%= screen===item.id?'active':'' %> <%= item.id==='failures'?'failures-link':'' %>" data-nav-page="<%= item.id %>" <%- screen===item.id?'aria-current="page"':'' %>><span class="nav-label"><%= item.title %></span><% if(item.id==='failures'){ %><span class="nav-count <%= failureCount?'nav-count-error':'' %>" title="Échecs dans tout le fichier chargé"><%= failureCount.toLocaleString('fr-FR') %></span><% } %></a>
-    <% } %>
-  </nav>
-  <div class="bar-server"><%- include('nav-icon',{id:'server'}) %><span title="<%= name %>"><%= name %></span></div>
-</div>
-<main id="main" tabindex="-1">
-  <header class="page-header">
-    <h1><%= pageTitle %></h1>
-    <div class="refresh">
-      <div class="theme-switch" role="group" aria-label="Apparence"><button type="button" data-theme-choice="light" aria-pressed="false">Clair</button><button type="button" data-theme-choice="dark" aria-pressed="false">Sombre</button></div>
-      <button id="refresh" class="button-secondary" type="button">Actualiser</button>
-      <label class="auto-refresh"><input type="checkbox" id="auto" role="switch" aria-label="Actualisation automatique toutes les 15 secondes"><span>Auto · 15 s</span></label>
-      <span id="refresh-status" class="refresh-status" role="status"></span>
+  <a class="skip-link" href="#main">Aller au contenu</a>
+  <div class="app-bar">
+    <div class="bar-inner">
+      <a class="brand" href="<%= filterUrl({}, '/') %>" aria-label="apt-viewer · accueil">
+        <img src="/assets/brand/logo.svg" alt="" width="34" height="34">
+        <span class="logo">apt-viewer</span>
+      </a>
+      <nav class="primary-nav" aria-label="Navigation principale">
+        <% for (const item of navigation) { %>
+          <a href="<%= filterUrl({}, item.path) %>" class="<%= screen === item.id ? 'active' : '' %> <%= item.id === 'failures' ? 'failures-link' : '' %>"
+            data-nav-page="<%= item.id %>" <%- screen === item.id ? 'aria-current="page"' : '' %>>
+            <span class="nav-label"><%= item.title %></span>
+            <% if (item.id === 'failures') { %>
+              <span class="nav-count <%= failureCount ? 'nav-count-error' : '' %>" title="Échecs dans tout le fichier chargé"><%= failureCount.toLocaleString('fr-FR') %></span>
+            <% } %>
+          </a>
+        <% } %>
+      </nav>
+      <div class="bar-server">
+        <%- include('server-icon') %>
+        <span title="<%= name %>"><%= name %></span>
+      </div>
     </div>
-  </header>
-  <% if(demo){ %><div class="notice">Démonstration · données synthétiques</div><% } %>
-  <% if(status.error){ %><div class="alert" role="alert">Lecture indisponible : <%= status.error %>. Vérifier le fichier et les droits. Les données affichées peuvent être anciennes.</div><% } %>
-  <div class="read-status">
-    <span class="read-state <%= status.error?'read-state-error':'' %>"><%= status.error?'Lecture en erreur':'Journal lisible' %></span>
-    <span>Dernière lecture : <%= status.readAt ? date(Date.parse(status.readAt)) : 'en attente' %> · Paris</span>
-    <% if(status.invalid){ %><span><%= status.invalid %> lignes ignorées</span><% } %>
-    <% if(status.truncated){ %><span class="window-warning">Fenêtre partielle : limite de lecture atteinte</span><% } %>
   </div>
+  <main id="main" tabindex="-1">
+    <header class="page-header">
+      <div class="page-intro">
+        <h1><%= pageTitle %></h1>
+        <div class="read-status">
+          <span class="read-state <%= status.error ? 'read-state-error' : '' %>"><%= status.error ? 'Lecture en erreur' : 'Journal lisible' %></span>
+          <span>Dernière lecture : <%= status.readAt ? date(Date.parse(status.readAt)) : 'en attente' %> · Paris</span>
+          <% if (status.invalid) { %>
+            <span><%= status.invalid %> lignes ignorées</span>
+          <% } %>
+          <% if (status.truncated) { %>
+            <span class="window-warning">Fenêtre partielle : limite de lecture atteinte</span>
+          <% } %>
+        </div>
+      </div>
+      <div class="refresh">
+        <div class="theme-switch" role="group" aria-label="Apparence">
+          <button type="button" data-theme-choice="light" aria-pressed="false" title="Thème clair">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+            <span class="visually-hidden">Clair</span>
+          </button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false" title="Thème sombre">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14A8.7 8.7 0 0 1 10 3.5 8.8 8.8 0 1 0 20.5 14Z"/></svg>
+            <span class="visually-hidden">Sombre</span>
+          </button>
+        </div>
+        <button id="refresh" class="button-secondary" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg>
+          Actualiser
+        </button>
+        <label class="auto-refresh">
+          <input type="checkbox" id="auto" role="switch" aria-label="Actualisation automatique toutes les 15 secondes">
+          <span>Auto · 15 s</span>
+        </label>
+        <span id="refresh-status" class="refresh-status" role="status"></span>
+      </div>
+    </header>
+    <% if (demo) { %>
+      <div class="notice">Démonstration · données synthétiques</div>
+    <% } %>
+    <% if (status.error) { %>
+      <div class="alert" role="alert">
+        Lecture indisponible : <%= status.error %>. Vérifier le fichier et les droits.
+        Les données affichées peuvent être anciennes.
+      </div>
+    <% } %>

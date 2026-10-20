@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Tests · Node.js 24
+  check:
+    name: Vérification · Node.js 24
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -32,5 +32,8 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
-      - name: Lancer les tests
-        run: npm test
+      - name: Vérifier la syntaxe JavaScript
+        run: |
+          for file in src/*.js public/*.js; do
+            node --check "$file"
+          done

@@ -1,23 +1,81 @@
-<section class="panel client-activity" aria-labelledby="<%= chartId %>-title" data-chart-kind="<%= clientChart?'clients':'destinations' %>">
-  <div class="chart-heading"><h3 id="<%= chartId %>-title"><%= title %></h3><div class="chart-total"><strong><%= chart.total.toLocaleString('fr-FR') %></strong><span>événements</span></div></div>
-  <% if(chart.total){ %>
-  <div class="chart-layout">
-    <div class="pie-figure">
-    <svg class="client-pie" width="300" height="300" viewBox="0 0 240 240" role="img" aria-labelledby="<%= chartId %>-title" aria-describedby="<%= chartId %>-desc" focusable="false">
-      <desc id="<%= chartId %>-desc">Répartition par nombre d’événements. Détail dans le tableau adjacent.</desc>
-      <% for(const slice of chart.slices){ %>
-      <path class="chart-color-<%= slice.index %>" d="<%= slice.path %>" data-chart-slice="<%= slice.index %>" data-label="<%= slice.name %>" data-count="<%= slice.count.toLocaleString('fr-FR') %>" data-share="<%= slice.share.toLocaleString('fr-FR',{maximumFractionDigits:1}) %>" focusable="false" aria-label="<%= slice.name %> : <%= slice.count.toLocaleString('fr-FR') %> événements, <%= slice.share.toLocaleString('fr-FR',{maximumFractionDigits:1}) %> %"></path>
-      <% } %>
-    </svg>
-    <div class="pie-tooltip" id="<%= chartId %>-tooltip" role="tooltip" hidden><strong class="pie-tooltip-name"></strong><span class="pie-tooltip-values"></span></div>
-    </div>
-    <div class="chart-legend" role="region" aria-label="<%= title %>">
-      <table><caption class="visually-hidden"><%= column %> : classement par nombre d’événements</caption><thead><tr><th scope="col"><%= column %></th><th scope="col">Événements</th><th scope="col">Part</th></tr></thead><tbody>
-        <% for(const slice of chart.slices){ %>
-        <tr data-chart-row="<%= slice.index %>"><td><span class="chart-swatch chart-color-<%= slice.index %>" aria-hidden="true"></span><% if(!slice.other){ %><a href="<%= filterUrl(clientChart?{ip:slice.name}:{endpoint:slice.name},'/activity') %>" aria-describedby="<%= chartId %>-tooltip" <% if(clientChart){ %>data-client-ip="<%= slice.name %>"<% } %>><%= slice.name %><%= clientChart&&clientName(slice.name)?' ('+clientName(slice.name)+')':'' %></a><% } else { %>Autres<% } %></td><td><%= slice.count.toLocaleString('fr-FR') %></td><td><%= slice.share.toLocaleString('fr-FR',{maximumFractionDigits:1}) %> %</td></tr>
-        <% } %>
-      </tbody></table>
+<section class="panel client-activity" aria-labelledby="<%= chartId %>-title" data-chart-kind="<%= clientChart ? 'clients' : 'destinations' %>">
+  <div class="chart-heading">
+    <h3 id="<%= chartId %>-title"><%= title %></h3>
+    <div class="chart-total">
+      <strong><%= chart.total.toLocaleString('fr-FR') %></strong>
+      <span>événements</span>
     </div>
   </div>
-  <% } else { %><p class="chart-empty">Aucun événement pour les filtres sélectionnés.</p><% } %>
+  <% if (chart.total) { %>
+    <div class="chart-layout">
+      <div class="pie-figure">
+        <svg class="client-pie" width="300" height="300" viewBox="0 0 240 240" role="img"
+          aria-labelledby="<%= chartId %>-title" aria-describedby="<%= chartId %>-desc" focusable="false">
+          <desc id="<%= chartId %>-desc">Répartition par nombre d’événements. Détail dans le tableau adjacent.</desc>
+          <% for (const slice of chart.slices) { %>
+            <%
+              const count = slice.count.toLocaleString('fr-FR');
+              const share = slice.share.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+            %>
+            <path
+              class="chart-color-<%= slice.index %>"
+              d="<%= slice.path %>"
+              data-chart-slice="<%= slice.index %>"
+              data-label="<%= slice.name %>"
+              data-count="<%= count %>"
+              data-share="<%= share %>"
+              focusable="false"
+              aria-label="<%= slice.name %> : <%= count %> événements, <%= share %> %"
+            ></path>
+          <% } %>
+        </svg>
+        <div class="pie-tooltip" id="<%= chartId %>-tooltip" role="tooltip" hidden>
+          <strong class="pie-tooltip-name"></strong>
+          <span class="pie-tooltip-values"></span>
+        </div>
+      </div>
+      <div class="chart-legend" role="region" aria-label="<%= title %>">
+        <table>
+          <caption class="visually-hidden"><%= column %> : classement par nombre d’événements</caption>
+          <thead>
+            <tr>
+              <th scope="col"><%= column %></th>
+              <th scope="col">Événements</th>
+              <th scope="col">Part</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% for (const slice of chart.slices) { %>
+              <%
+                const client = clientChart && !slice.other ? clientName(slice.name) : '';
+                const filter = clientChart ? { ip: slice.name } : { endpoint: slice.name };
+              %>
+              <tr data-chart-row="<%= slice.index %>">
+                <td>
+                  <span class="chart-swatch chart-color-<%= slice.index %>" aria-hidden="true"></span>
+                  <% if (!slice.other) { %>
+                    <a href="<%= filterUrl(filter, '/activity') %>" aria-describedby="<%= chartId %>-tooltip"
+                      <% if (clientChart) { %>data-client-ip="<%= slice.name %>"<% } %>>
+                      <% if (clientChart) { %>
+                        <span class="client-address"><%= slice.name %></span>
+                        <span class="client-host"><%= client %></span>
+                      <% } else { %>
+                        <%= slice.name %>
+                      <% } %>
+                    </a>
+                  <% } else { %>
+                    Autres
+                  <% } %>
+                </td>
+                <td><%= slice.count.toLocaleString('fr-FR') %></td>
+                <td><%= slice.share.toLocaleString('fr-FR', { maximumFractionDigits: 1 }) %> %</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } else { %>
+    <p class="chart-empty">Aucun événement pour les filtres sélectionnés.</p>
+  <% } %>
 </section>

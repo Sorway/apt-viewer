@@ -1,17 +1,36 @@
-// Keep regular links as a fallback; enhance only pagination in the current list.
-(() => {
+function setupPagination() {
   let loading = false;
-  const position = () => {
-    const table = document.querySelector('#results .scroll');
-    return {x: window.scrollX, y: window.scrollY, tableX: table?.scrollLeft || 0, tableY: table?.scrollTop || 0};
-  };
-  const restore = value => {
-    const table = document.querySelector('#results .scroll');
-    if (table) { table.scrollLeft = value.tableX; table.scrollTop = value.tableY; }
-    window.scrollTo({left: value.x, top: value.y, behavior: 'instant'});
-  };
 
-  async function navigate(url, {historyEntry = true, savedPosition, focusRel} = {}) {
+  function readScrollPosition() {
+    const table = document.querySelector('#results .scroll');
+    return {
+      x: window.scrollX,
+      y: window.scrollY,
+      tableX: table?.scrollLeft || 0,
+      tableY: table?.scrollTop || 0,
+    };
+  }
+
+  function restoreScrollPosition(position) {
+    const table = document.querySelector('#results .scroll');
+    if (table) {
+      table.scrollLeft = position.tableX;
+      table.scrollTop = position.tableY;
+    }
+    window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
+  }
+
+  function updatePageStatus(nextDocument) {
+    const readStatus = document.querySelector('.read-status');
+    const nextReadStatus = nextDocument.querySelector('.read-status');
+    if (readStatus && nextReadStatus) readStatus.replaceWith(nextReadStatus);
+
+    const count = document.querySelector('.filter-heading > span');
+    const nextCount = nextDocument.querySelector('.filter-heading > span');
+    if (count && nextCount) count.textContent = nextCount.textContent;
+  }
+
+  async function navigate(url, { historyEntry = true, savedPosition, focusRel } = {}) {
     if (loading) return;
     const current = document.querySelector('#results');
     if (!current) return;
@@ -22,31 +41,41 @@
     feedback.hidden = false;
     feedback.textContent = 'Chargement…';
     try {
-      const response = await fetch(url.href, {headers: {'Accept': 'text/html'}, cache: 'no-store'});
-      if (!response.ok) throw Error('PAGE_LOAD');
+      const response = await fetch(url.href, {
+        headers: { Accept: 'text/html' },
+        cache: 'no-store',
+      });
+      if (!response.ok) throw new Error('PAGE_LOAD');
       const nextDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
       const next = nextDocument.querySelector('#results');
-      if (!next) throw Error('PAGE_CONTENT');
-      const scroll = savedPosition || position();
+      if (!next) throw new Error('PAGE_CONTENT');
+      const scroll = savedPosition || readScrollPosition();
       if (historyEntry) {
-        window.history.replaceState({...window.history.state, aptObserverPagination: position()}, '', window.location.href);
-        window.history.pushState({aptObserverPagination: scroll}, '', url.href);
+        window.history.replaceState(
+          { ...window.history.state, aptObserverPagination: readScrollPosition() },
+          '',
+          window.location.href,
+        );
+        window.history.pushState({ aptObserverPagination: scroll }, '', url.href);
       }
       current.replaceWith(next);
-      const readStatus = document.querySelector('.read-status');
-      const nextReadStatus = nextDocument.querySelector('.read-status');
-      if (readStatus && nextReadStatus) readStatus.replaceWith(nextReadStatus);
-      const count = document.querySelector('.filter-heading > span');
-      const nextCount = nextDocument.querySelector('.filter-heading > span');
-      if (count && nextCount) count.textContent = nextCount.textContent;
+      updatePageStatus(nextDocument);
       const nextFeedback = next.querySelector('.pagination-feedback');
       nextFeedback.hidden = false;
-      nextFeedback.textContent = next.querySelector('.pagination-page').textContent + ' · ' + next.querySelector('.result-range').textContent;
-      const focus = focusRel && (next.querySelector(`a[rel="${focusRel}"]`) || next.querySelector('.pagination-page'));
-      if (focus) focus.focus({preventScroll: true});
-      restore(scroll);
+      nextFeedback.textContent =
+        next.querySelector('.pagination-page').textContent +
+        ' · ' +
+        next.querySelector('.result-range').textContent;
+      const focus =
+        focusRel &&
+        (next.querySelector(`a[rel="${focusRel}"]`) || next.querySelector('.pagination-page'));
+      if (focus) focus.focus({ preventScroll: true });
+      restoreScrollPosition(scroll);
     } catch {
-      if (!historyEntry) { window.location.reload(); return; }
+      if (!historyEntry) {
+        window.location.reload();
+        return;
+      }
       feedback.textContent = 'Chargement impossible. Cliquez à nouveau pour réessayer.';
     } finally {
       pagination.removeAttribute('aria-busy');
@@ -55,20 +84,34 @@
   }
 
   document.addEventListener('click', event => {
-    if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
     const link = event.target.closest('.pagination a[rel]');
     if (!link || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
     const url = new URL(link.href, window.location.href);
     if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) return;
     event.preventDefault();
     url.hash = '';
-    navigate(url, {focusRel: link.rel});
+    navigate(url, { focusRel: link.rel });
   });
   window.addEventListener('popstate', event => {
-    if (loading) { window.location.reload(); return; }
+    if (loading) {
+      window.location.reload();
+      return;
+    }
     navigate(new URL(window.location.href), {
       historyEntry: false,
-      savedPosition: event.state?.aptObserverPagination || {x: 0, y: 0, tableX: 0, tableY: 0},
+      savedPosition: event.state?.aptObserverPagination || { x: 0, y: 0, tableX: 0, tableY: 0 },
     });
   });
-})();
+}
+
+setupPagination();
