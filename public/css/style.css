@@ -1270,7 +1270,8 @@ td a:hover {
 .update-state[data-up-to-date='true'] {
   color: var(--positive);
 }
-.update-state[data-error='true'] {
+.update-state[data-error='true'],
+.update-state[data-available='true'] {
   color: var(--error-text);
 }
 .update-menu-notes {

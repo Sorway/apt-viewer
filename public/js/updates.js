@@ -26,6 +26,7 @@ function showStatus(info) {
   };
   updateState.dataset.error = String(Boolean(info.error));
   updateState.dataset.upToDate = String(!info.error && !info.available && Boolean(info.latest));
+  updateState.dataset.available = String(!info.error && Boolean(info.available));
   updateState.textContent = info.error
     ? t(errors[info.error] || 'update.errorNetwork', { status: info.httpStatus || '—' })
     : t(info.available ? 'update.ready' : info.latest ? 'update.upToDate' : 'update.noRelease');
@@ -59,6 +60,7 @@ async function checkVersion() {
   } catch {
     updateState.dataset.error = 'true';
     updateState.dataset.upToDate = 'false';
+    updateState.dataset.available = 'false';
     updateState.textContent = window.aptI18n.t('update.errorCheck');
   } finally {
     checkingVersion = false;
