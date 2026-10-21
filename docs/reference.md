@@ -84,10 +84,12 @@ Les pages `/clients/:ip` et `/endpoints/:depot` réunissent les volumes, la cour
 
 ### Vérification des mises à jour
 
-Le serveur compare sa version à celle du `package.json` de `master` sur GitHub, avec un cache d’une heure et un délai de réponse maximal de 5 secondes. Une panne réseau conserve le dernier résultat disponible. La version doit être augmentée dans `package.json` pour déclencher la bannière.
+Le serveur interroge `GET https://api.github.com/repos/Sorway/apt-viewer/releases/latest` et compare le tag de la dernière release stable à la version installée. Les tags acceptés sont `vX.Y.Z` et `X.Y.Z` ; les brouillons et préversions sont ignorés. Un commit ou un tag sans release publiée ne déclenche pas la bannière.
+
+Le résultat est mis en cache pendant une heure, avec un délai de réponse maximal de 5 secondes. Une panne réseau ou une limite de l’API conserve le dernier résultat disponible. Une réponse `404` signifie qu’aucune release stable n’est disponible : `latest` et `releaseUrl` valent alors `null`, et `available` vaut `false`.
 
 ```json
-{"current":"1.0.0","latest":"1.1.0","available":true}
+{"current":"1.0.0","latest":"1.1.0","releaseUrl":"https://github.com/Sorway/apt-viewer/releases/tag/v1.1.0","available":true}
 ```
 
 ### Routes
@@ -98,7 +100,7 @@ Le serveur compare sa version à celle du `package.json` de `master` sur GitHub,
 | `GET /api/failures` | Filtres, tri, état du lecteur, échecs paginés et nombre d’échecs avec un code HTTP |
 | `GET /api/failure-groups` | Échecs regroupés et paginés : `id`, `count`, `clients`, `clientCount`, `first`, `last`, code, ressource et motif ; `total` compte les occurrences, `groupTotal` les groupes |
 | `GET /api/client-names` | Objet associant les adresses IP aux noms DNS disponibles |
-| `GET /api/version` | Version installée, dernière version connue et disponibilité d’une mise à jour |
+| `GET /api/version` | Version installée, dernière release stable connue, lien vers ses notes et disponibilité d’une mise à jour |
 | `GET /healthz` | `200` avec `{"ok":true}` si le journal est lisible ; `503` avec `{"ok":false}` sinon |
 
 `/healthz` contrôle la lecture du journal. Il ne vérifie pas le service apt-cacher-ng.

@@ -12,7 +12,7 @@
         <summary><%= t('update.menu') %></summary>
         <div class="update-popover">
           <strong><%= t('update.command') %></strong>
-          <code id="update-command" tabindex="0">curl -fsSL https://raw.githubusercontent.com/Sorway/apt-viewer/master/update.sh | sudo bash -s</code>
+          <code id="update-command" tabindex="0">curl -fsSL https://github.com/Sorway/apt-viewer/releases/latest/download/update.sh | sudo bash -s</code>
           <button type="button" class="button-secondary" data-copy-update hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg>
             <span><%= t('update.copy') %></span>

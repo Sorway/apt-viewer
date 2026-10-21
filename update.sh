@@ -10,7 +10,7 @@ fail() {
 }
 
 if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
-  printf 'Usage : sudo bash update.sh [référence]\n\nMet à jour apt-viewer depuis GitHub.\nRéférence : branche, tag ou commit ; master par défaut.\nLa configuration existante est conservée.\n'
+  printf 'Usage : sudo bash update.sh [référence]\n\nMet à jour apt-viewer depuis GitHub.\nSans référence : dernière release stable. Une branche, un tag ou un commit peut être indiqué explicitement.\nLa configuration existante est conservée.\n'
   exit 0
 fi
 (( $# <= 1 )) || fail 'Une seule référence Git est acceptée.'
@@ -22,8 +22,18 @@ for command in curl tar; do
   command -v "$command" >/dev/null || fail "Commande requise : $command."
 done
 
-readonly ref="${1:-${APT_VIEWER_REF:-master}}"
+ref="${1:-${APT_VIEWER_REF:-latest}}"
 [[ "$ref" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ ]] || fail 'Référence Git invalide.'
+archive_ref="$ref"
+if [[ "$ref" == latest ]]; then
+  release_url=$(curl --fail --silent --show-error --location --head \
+    --connect-timeout 10 --max-time 30 --output /dev/null --write-out '%{url_effective}' \
+    https://github.com/Sorway/apt-viewer/releases/latest) || fail 'Dernière release stable introuvable sur GitHub.'
+  ref="${release_url#https://github.com/Sorway/apt-viewer/releases/tag/}"
+  [[ ${#ref} -le 100 && "$ref" =~ ^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || fail 'Le tag de release doit être au format vX.Y.Z ou X.Y.Z.'
+  archive_ref="refs/tags/$ref"
+fi
+readonly ref archive_ref
 
 work_dir=$(mktemp -d)
 trap 'rm -rf -- "$work_dir"' EXIT
@@ -31,7 +41,7 @@ trap 'rm -rf -- "$work_dir"' EXIT
 printf 'Téléchargement de la version %s…\n' "$ref"
 curl --fail --silent --show-error --location --retry 3 \
   --connect-timeout 10 --max-time 180 \
-  "https://codeload.github.com/Sorway/apt-viewer/tar.gz/$ref" \
+  "https://codeload.github.com/Sorway/apt-viewer/tar.gz/$archive_ref" \
   --output "$work_dir/source.tar.gz"
 mkdir -- "$work_dir/source"
 tar -xzf "$work_dir/source.tar.gz" --strip-components=1 -C "$work_dir/source"

@@ -59,7 +59,7 @@
   <main id="main" tabindex="-1">
     <aside class="update-banner" hidden aria-label="<%= t('update.availableLabel') %>">
       <p role="status"><%= t('update.version') %> <strong data-update-version></strong> <%= t('update.available') %></p>
-      <a href="https://github.com/Sorway/apt-viewer/commits/master/" target="_blank" rel="noopener noreferrer" aria-label="<%= t('update.changesLabel') %>"><%= t('update.changes') %></a>
+      <a data-update-notes href="https://github.com/Sorway/apt-viewer/releases/latest" target="_blank" rel="noopener noreferrer" aria-label="<%= t('update.changesLabel') %>"><%= t('update.changes') %></a>
       <button type="button" data-dismiss-update aria-label="<%= t('update.dismiss') %>">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg>
       </button>

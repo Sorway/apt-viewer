@@ -104,7 +104,18 @@ if [[ -z "$source_dir" || ! -f "$source_dir/src/server.js" || ! -f "$source_dir/
   printf "Téléchargement d’apt-viewer…\n"
   source_dir="$work_dir/source"
   mkdir -- "$source_dir"
-  download "https://codeload.github.com/Sorway/apt-viewer/tar.gz/${APT_VIEWER_REF:-master}" "$work_dir/source.tar.gz"
+  ref="${APT_VIEWER_REF:-latest}"
+  [[ "$ref" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ ]] || fail 'Référence Git invalide.'
+  archive_ref="$ref"
+  if [[ "$ref" == latest ]]; then
+    release_url=$(curl --fail --silent --show-error --location --head \
+      --connect-timeout 10 --max-time 30 --output /dev/null --write-out '%{url_effective}' \
+      https://github.com/Sorway/apt-viewer/releases/latest) || fail 'Dernière release stable introuvable sur GitHub.'
+    ref="${release_url#https://github.com/Sorway/apt-viewer/releases/tag/}"
+    [[ ${#ref} -le 100 && "$ref" =~ ^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || fail 'Le tag de release doit être au format vX.Y.Z ou X.Y.Z.'
+    archive_ref="refs/tags/$ref"
+  fi
+  download "https://codeload.github.com/Sorway/apt-viewer/tar.gz/$archive_ref" "$work_dir/source.tar.gz"
   tar -xzf "$work_dir/source.tar.gz" --strip-components=1 -C "$source_dir"
 fi
 

@@ -9,7 +9,7 @@ Interface web pour consulter le journal d’apt-cacher-ng : transferts, clients,
 Sur le serveur apt-cacher-ng, avec Debian ou Ubuntu, systemd et curl :
 
 ```sh
-curl -fL https://raw.githubusercontent.com/Sorway/apt-viewer/master/install.sh -o install.sh
+curl -fL https://github.com/Sorway/apt-viewer/releases/latest/download/install.sh -o install.sh
 sudo bash install.sh
 ```
 
@@ -26,14 +26,14 @@ Pour changer le chemin du journal ou configurer Nginx, voir le [guide de déploi
 ## Mise à jour
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Sorway/apt-viewer/master/update.sh | sudo bash -s
+curl -fsSL https://github.com/Sorway/apt-viewer/releases/latest/download/update.sh | sudo bash -s
 ```
 
-La commande récupère le script de mise à jour depuis GitHub, puis l’exécute. Il installe `master`, conserve la configuration et sauvegarde l’installation précédente. Si le service ne redémarre pas correctement, celle-ci est restaurée.
+La commande récupère le script de la dernière release stable sur GitHub, puis installe cette version. Elle conserve la configuration et sauvegarde l’installation précédente. Si le service ne redémarre pas correctement, celle-ci est restaurée.
 
 La version installée figure dans le footer. Le menu **Mise à jour** permet de copier la commande.
 
-Une bannière signale les nouvelles versions publiées dans le `package.json` de `master`. La vérification a lieu une fois par heure ; une bannière masquée reste cachée jusqu’à la version suivante.
+Une bannière signale les nouvelles releases stables et donne accès à leurs notes de version. La vérification a lieu une fois par heure ; une bannière masquée reste cachée jusqu’à la version suivante. Les brouillons et préversions sont ignorés.
 
 [Choisir une version](docs/deployment.md#choisir-une-version).
 

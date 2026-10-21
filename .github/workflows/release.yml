@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publier la release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Récupérer le tag
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Vérifier la version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const tag = process.env.RELEASE_TAG;
+          const version = tag.replace(/^v/, '');
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
+          if (tag.length > 100 || !/^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(tag) ||
+              version !== pkg.version || version !== lock.version || version !== lock.packages[''].version) {
+            throw new Error('Le tag, package.json et package-lock.json doivent porter la même version stable.');
+          }
+          NODE
+
+      - name: Vérifier les scripts
+        run: |
+          bash -n install.sh
+          bash -n update.sh
+          shellcheck install.sh update.sh
+          find src public -type f -name '*.js' -print0 | xargs -0 -r -n 1 node --check
+
+      - name: Publier les scripts et les notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" install.sh update.sh \
+            --verify-tag --title "$RELEASE_TAG" --generate-notes --latest

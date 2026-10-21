@@ -1,4 +1,4 @@
-const packageUrl = 'https://raw.githubusercontent.com/Sorway/apt-viewer/master/package.json';
+const releasesUrl = 'https://api.github.com/repos/Sorway/apt-viewer/releases/latest';
 const checkInterval = 60 * 60 * 1000;
 
 function parseVersion(version) {
@@ -38,11 +38,12 @@ export function isNewerVersion(latest, current) {
 
 export function createUpdateChecker(currentVersion, { request = fetch, now = Date.now } = {}) {
   let latest = null;
+  let releaseUrl = null;
   let nextCheck = 0;
   let pending;
 
   function status() {
-    return { current: currentVersion, latest, available: isNewerVersion(latest, currentVersion) };
+    return { current: currentVersion, latest, releaseUrl, available: isNewerVersion(latest, currentVersion) };
   }
 
   return async function check() {
@@ -51,13 +52,21 @@ export function createUpdateChecker(currentVersion, { request = fetch, now = Dat
     nextCheck = now() + checkInterval;
     pending = (async () => {
       try {
-        const response = await request(packageUrl, {
-          headers: { Accept: 'application/json', 'User-Agent': 'apt-viewer' },
+        const response = await request(releasesUrl, {
+          headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'apt-viewer' },
           signal: AbortSignal.timeout(5000),
         });
-        if (response.ok) {
+        if (response.status === 404) {
+          latest = null;
+          releaseUrl = null;
+        } else if (response.ok) {
           const info = await response.json();
-          if (info?.name === 'apt-viewer' && parseVersion(info.version)) latest = info.version;
+          const tag = info?.tag_name;
+          if (info?.draft === false && info?.prerelease === false &&
+              typeof tag === 'string' && /^v?\d+\.\d+\.\d+$/.test(tag) && parseVersion(tag)) {
+            latest = tag.replace(/^v/, '');
+            releaseUrl = `https://github.com/Sorway/apt-viewer/releases/tag/${tag}`;
+          }
         }
       } catch {
         // Conserver la dernière vérification si GitHub est inaccessible.

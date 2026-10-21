@@ -12,11 +12,11 @@
 ## Installation
 
 ```sh
-curl -fL https://raw.githubusercontent.com/Sorway/apt-viewer/master/install.sh -o install.sh
+curl -fL https://github.com/Sorway/apt-viewer/releases/latest/download/install.sh -o install.sh
 sudo bash install.sh
 ```
 
-Depuis un clone du dépôt, lancer directement `sudo bash install.sh`.
+Depuis un clone du dépôt, `sudo bash install.sh` installe le code du checkout local.
 
 Le script installe les dépendances système, Node.js 24 et les dépendances npm. Il crée le compte `apt-viewer`, applique les droits de lecture du journal, puis active le service systemd et vérifie `/healthz`.
 
@@ -74,22 +74,33 @@ Adapter le port des commandes si `PORT` a été modifié. Toutes les variables f
 ## Mise à jour
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Sorway/apt-viewer/master/update.sh | sudo bash -s
+curl -fsSL https://github.com/Sorway/apt-viewer/releases/latest/download/update.sh | sudo bash -s
 ```
 
-La commande télécharge le script depuis GitHub et l’exécute avec sudo. Elle fonctionne aussi si `/opt/apt-viewer/update.sh` est absent ou ancien. Le script met à jour l’application, Node.js 24, les dépendances et le service.
+La commande télécharge le script joint à la dernière release stable et l’exécute avec sudo. Elle fonctionne aussi si `/opt/apt-viewer/update.sh` est absent ou ancien. Le script installe le code du tag de cette release, Node.js 24, les dépendances et le service. En l’absence de release stable, il s’arrête sans utiliser `master`.
 
 La configuration `/etc/apt-viewer.env` est conservée. L’ancienne installation reste dans `/opt/apt-viewer.backup.*`. Si le démarrage ou le contrôle de santé échoue, le script restaure l’installation et l’état du service précédents.
 
 ### Choisir une version
 
-Le script accepte une branche, un tag ou un commit en argument. Sans argument, il utilise `APT_VIEWER_REF` si cette variable est définie, puis `master` par défaut.
+Le script accepte une branche, un tag ou un commit en argument. Sans argument, il utilise `APT_VIEWER_REF` si cette variable est définie, puis la dernière release stable. La valeur `latest` sélectionne explicitement cette release. Les tags stables suivent le format `vX.Y.Z` ou `X.Y.Z`.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Sorway/apt-viewer/master/update.sh | sudo bash -s -- master
+curl -fsSL https://github.com/Sorway/apt-viewer/releases/latest/download/update.sh | sudo bash -s -- 1.0.1
 ```
 
-Remplacer `master` par la référence à installer.
+Remplacer `1.0.1` par le tag exact, la branche ou le commit à installer. Une référence explicite permet aussi de revenir à une version précédente.
+
+### Publier une release
+
+Mettre la même version dans `package.json` et `package-lock.json`, puis pousser le commit et son tag :
+
+```sh
+git tag v1.0.2
+git push origin master v1.0.2
+```
+
+Remplacer `v1.0.2` par la version choisie. Le workflow `Release` vérifie la version et la syntaxe, puis crée la release avec les notes générées et les fichiers `install.sh` et `update.sh`. Un tag seul, sans release publiée, ne déclenche pas la bannière. Les commandes de téléchargement nécessitent une release contenant ces deux fichiers.
 
 ## Nginx
 
