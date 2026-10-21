@@ -102,4 +102,4 @@ update.sh         Mise à jour
 
 ## Licence
 
-[MIT](LICENSE).
+[PolyForm Noncommercial 1.0.0](LICENSE).

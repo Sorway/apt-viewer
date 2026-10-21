@@ -1332,6 +1332,7 @@ td a:hover {
 }
 .footer-links {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 18px;
 }
