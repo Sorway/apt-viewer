@@ -9,10 +9,13 @@ Le conteneur utilise Node.js 24 et le compte `node` (UID/GID 1000). Le journal e
 Depuis le répertoire du projet, avec Docker et le plugin Compose installés :
 
 ```sh
-docker compose up -d --build
+docker compose pull
+docker compose up -d --no-build
 ```
 
 Ouvrir [localhost:3000](http://127.0.0.1:3000).
+
+L’image [`ghcr.io/sorway/apt-viewer:latest`](https://github.com/Sorway/apt-viewer/pkgs/container/apt-viewer) est publiée pour `linux/amd64` et `linux/arm64`. Le tag `latest` suit la branche `master` ; les tags Git `v*` publient aussi la version correspondante et chaque publication reçoit un tag `sha-…`.
 
 Le répertoire `/var/log/apt-cacher-ng` doit exister sur la machine qui exécute Docker. Le dossier entier est monté pour que le lecteur retrouve le nouveau fichier après une rotation du journal.
 
@@ -62,7 +65,7 @@ Si le fichier reste illisible, accorder les droits de lecture au groupe choisi, 
 Cette variante monte le dossier `sample/` du projet. Elle fonctionne sans journal apt-cacher-ng local :
 
 ```sh
-docker compose -f compose.yaml -f compose.demo.yaml up -d --build
+docker compose -f compose.yaml -f compose.demo.yaml up -d --no-build
 ```
 
 Utiliser les mêmes fichiers Compose pour arrêter la démonstration :
@@ -79,7 +82,14 @@ docker compose logs -f apt-viewer
 docker compose down
 ```
 
-Pour reconstruire l’image après une mise à jour du code ou de l’image Node.js :
+Pour installer la dernière image publiée :
+
+```sh
+docker compose pull
+docker compose up -d --no-build
+```
+
+Pour construire l’image à partir du code local :
 
 ```sh
 docker compose build --pull
@@ -88,6 +98,6 @@ docker compose up -d
 
 Le contrôle de santé appelle `/healthz`. Un conteneur `unhealthy` signale une erreur de lecture du journal ou un serveur qui ne répond pas ; consulter les logs et vérifier le montage et les permissions.
 
-La CI construit l’image et démarre la démonstration jusqu’à ce que le contrôle de santé soit positif.
+La CI vérifie le code, le démarrage Docker et l’installation Linux avant de publier l’image sur GHCR. La publication utilise le `GITHUB_TOKEN` du workflow, sans secret supplémentaire.
 
 Documentation Docker : [montages de répertoires](https://docs.docker.com/engine/storage/bind-mounts/) et [configuration des services Compose](https://docs.docker.com/reference/compose-file/services/).

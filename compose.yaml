@@ -1,5 +1,6 @@
 services:
   apt-viewer:
+    image: ghcr.io/sorway/apt-viewer:latest
     build: .
     init: true
     restart: unless-stopped

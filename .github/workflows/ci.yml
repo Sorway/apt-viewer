@@ -32,6 +32,11 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
+      - name: Vérifier le script d’installation
+        run: |
+          bash -n install.sh
+          shellcheck install.sh
+
       - name: Vérifier la syntaxe JavaScript
         run: |
           for file in src/*.js public/*.js; do
@@ -61,3 +66,91 @@ jobs:
       - name: Arrêter les conteneurs
         if: always()
         run: docker compose -f compose.yaml -f compose.demo.yaml down
+
+  linux:
+    name: Installation Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Préparer le journal et la configuration
+        run: |
+          sudo install -d -m 0750 /var/log/apt-viewer-ci
+          sudo install -m 0600 sample/apt-cacher.log /var/log/apt-viewer-ci/apt-cacher.log
+          printf 'HOST=127.0.0.1\nPORT=3100\nLOG_PATH=/var/log/apt-viewer-ci/apt-cacher.log\n' | sudo tee /etc/apt-viewer.env >/dev/null
+          sudo cp /etc/apt-viewer.env /tmp/apt-viewer.env.expected
+
+      - name: Installer puis mettre à jour
+        run: |
+          sudo bash install.sh
+          curl --fail http://127.0.0.1:3100/healthz
+          sudo bash install.sh
+          sudo cmp /etc/apt-viewer.env /tmp/apt-viewer.env.expected
+          curl --fail http://127.0.0.1:3100/healthz
+          systemctl is-active apt-viewer.service
+
+      - name: Afficher les journaux en cas d’échec
+        if: failure()
+        run: sudo journalctl -u apt-viewer.service -n 100 --no-pager
+
+  publish:
+    name: Publier sur GHCR
+    needs: [check, docker, linux]
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Activer les constructions ARM
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+
+      - name: Configurer Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Se connecter au registry GitHub
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Préparer les tags de l’image
+        id: metadata
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=sha
+          labels: |
+            org.opencontainers.image.title=apt-viewer
+            org.opencontainers.image.description=Interface pour les journaux apt-cacher-ng
+            org.opencontainers.image.licenses=MIT
+
+      - name: Construire et publier
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

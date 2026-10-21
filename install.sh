@@ -101,7 +101,7 @@ if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
   source_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 fi
 if [[ -z "$source_dir" || ! -f "$source_dir/src/server.js" || ! -f "$source_dir/deploy/apt-viewer.service" ]]; then
-  printf 'Téléchargement d’apt-viewer…\n'
+  printf "Téléchargement d’apt-viewer…\n"
   source_dir="$work_dir/source"
   mkdir -- "$source_dir"
   download "https://codeload.github.com/Sorway/apt-viewer/tar.gz/${APT_VIEWER_REF:-master}" "$work_dir/source.tar.gz"
@@ -154,7 +154,9 @@ port=$(read_setting PORT 3000)
 host=$(read_setting HOST 127.0.0.1)
 [[ "$log_path" == /* && "$log_path" != *$'\n'* ]] || fail 'LOG_PATH doit être un chemin absolu.'
 [[ -f "$log_path" ]] || fail "Journal introuvable : $log_path. Modifier LOG_PATH dans $config_file puis relancer."
-[[ "$port" =~ ^[0-9]{1,5}$ ]] && (( 10#$port >= 1 && 10#$port <= 65535 )) || fail 'PORT invalide.'
+if [[ ! "$port" =~ ^[0-9]{1,5}$ ]] || (( 10#$port < 1 || 10#$port > 65535 )); then
+  fail 'PORT invalide.'
+fi
 
 directory=$(dirname -- "$log_path")
 while [[ "$directory" != / ]]; do
@@ -192,7 +194,7 @@ systemctl enable apt-viewer.service
 systemctl restart apt-viewer.service
 
 ready=false
-for attempt in {1..15}; do
+for _ in {1..15}; do
   if curl --noproxy '*' --fail --silent --connect-timeout 1 --max-time 2 "$url/healthz" >/dev/null; then
     ready=true
     break

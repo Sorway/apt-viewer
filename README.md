@@ -36,8 +36,11 @@ cd apt-viewer
 
 ### Docker
 
+L’image est publiée sur [GitHub Container Registry](https://github.com/Sorway/apt-viewer/pkgs/container/apt-viewer) pour **amd64** et **arm64**.
+
 ```sh
-docker compose up -d --build
+docker compose pull
+docker compose up -d --no-build
 ```
 
 Ouvrir **[localhost:3000](http://127.0.0.1:3000)**. Le répertoire `/var/log/apt-cacher-ng` du serveur est monté en lecture seule.
@@ -45,43 +48,31 @@ Ouvrir **[localhost:3000](http://127.0.0.1:3000)**. Le répertoire `/var/log/apt
 Pour essayer avec les données de démonstration :
 
 ```sh
-docker compose -f compose.yaml -f compose.demo.yaml up -d --build
+docker compose -f compose.yaml -f compose.demo.yaml up -d --no-build
 ```
 
 [Configuration Docker, permissions et commandes →](docs/docker.md)
 
-### Node.js
+### Linux — Debian / Ubuntu
 
-**Node.js 24 et npm.**
-
-```sh
-npm ci
-npm run demo
-```
-
-Ouvrir **[localhost:3000](http://127.0.0.1:3000)**. La démonstration utilise les journaux fournis dans [`sample/`](sample/).
-
-### Utiliser ses journaux
-
-Arrêter la démonstration, puis créer le fichier de configuration :
+Sur la machine qui héberge apt-cacher-ng :
 
 ```sh
-cp .env.example .env
+sudo bash install.sh
 ```
 
-Sous PowerShell : `Copy-Item .env.example .env`.
-
-Renseigner le chemin du journal dans `.env` :
-
-```dotenv
-LOG_PATH=/var/log/apt-cacher-ng/apt-cacher.log
-```
-
-Le compte qui lance l’application doit pouvoir lire ce fichier.
+Ou sans cloner le dépôt :
 
 ```sh
-npm start
+curl -fL https://raw.githubusercontent.com/Sorway/apt-viewer/master/install.sh -o install.sh
+sudo bash install.sh
 ```
+
+Le script installe **Node.js 24**, le compte `apt-viewer`, les droits de lecture du journal et le service **systemd**. L’application est installée dans `/opt/apt-viewer` et écoute sur **[localhost:3000](http://127.0.0.1:3000)**.
+
+La configuration se trouve dans `/etc/apt-viewer.env`. Pour mettre à jour, relancer le script : la configuration est conservée et la version précédente sauvegardée.
+
+[Configuration du service et Nginx →](docs/deployment.md)
 
 ## Configuration
 
@@ -111,6 +102,17 @@ Le guide [**Debian / Ubuntu**](docs/deployment.md) couvre l’installation, les 
 | `GET /healthz` | État de lecture du journal |
 
 [Filtres, exemples et format des journaux →](docs/reference.md)
+
+## Développement
+
+Avec Node.js 24 et npm :
+
+```sh
+npm ci
+npm run demo
+```
+
+La démonstration utilise les journaux de [`sample/`](sample/). Pour utiliser un autre journal, copier `.env.example` vers `.env`, adapter `LOG_PATH`, puis lancer `npm start`.
 
 ## Licence
 
