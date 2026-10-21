@@ -17,6 +17,8 @@ jobs:
   validate:
     name: CI complète
     uses: ./.github/workflows/ci.yml
+    with:
+      release-artifact: true
 
   publish:
     name: Publier la release

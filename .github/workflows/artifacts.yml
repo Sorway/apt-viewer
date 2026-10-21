@@ -1,0 +1,58 @@
+name: Nettoyage des artifacts
+
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Release']
+    types: [completed]
+
+permissions:
+  actions: write
+
+concurrency:
+  group: cleanup-artifacts
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Supprimer les archives temporaires
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Nettoyer les artifacts de publication
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+            const completed = context.payload.workflow_run;
+            const publishedRun = completed?.conclusion === 'success' ? completed.id : null;
+            const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
+              ...context.repo, per_page: 100,
+            });
+            const runs = new Map();
+            let deleted = 0;
+
+            for (const artifact of artifacts) {
+              if (!artifact.name.startsWith('release-candidate-')) continue;
+              const runId = artifact.workflow_run?.id;
+              if (!runId) continue;
+              const justPublished = runId === publishedRun;
+              if (!justPublished && !(Date.parse(artifact.created_at) < cutoff)) continue;
+
+              if (!runs.has(runId)) {
+                const { data } = await github.rest.actions.getWorkflowRun({ ...context.repo, run_id: runId });
+                runs.set(runId, data.status);
+              }
+              if (runs.get(runId) !== 'completed') continue;
+
+              try {
+                await github.rest.actions.deleteArtifact({ ...context.repo, artifact_id: artifact.id });
+                core.info(`Supprimé : ${artifact.name} (${artifact.id})`);
+                deleted++;
+              } catch (error) {
+                if (error.status !== 404) throw error;
+              }
+            }
+            core.info(`${deleted} artifact(s) supprimé(s).`);

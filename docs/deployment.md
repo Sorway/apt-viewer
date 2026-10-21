@@ -120,6 +120,8 @@ Après réussite de tous les contrôles, la publication récupère les mêmes fi
 
 Les releases immuables sont activées sur le dépôt GitHub. Les prochaines publications verrouillent leurs tags et fichiers ; les releases antérieures à l’activation restent inchangées. Voir la [documentation GitHub](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/prevent-release-changes).
 
+Les artifacts Actions sont créés uniquement pour les releases, avec une rétention d’un jour. Le workflow `Nettoyage des artifacts` les supprime après une publication réussie. Il tourne aussi chaque jour pour purger les anciennes archives `release-candidate-*` des exécutions terminées, y compris celles créées avec l’ancienne rétention de sept jours. Les exécutions en cours sont préservées. Le nettoyage peut être lancé manuellement depuis Actions ; les fichiers joints aux releases GitHub sont conservés.
+
 Un tag seul, sans release publiée, ne déclenche pas la bannière. Le SHA-256 vérifie que l’archive correspond au manifeste téléchargé ; la confiance dans la publication et ses scripts repose sur le dépôt GitHub et HTTPS.
 
 ## Nginx
