@@ -1,0 +1,5 @@
+<th scope="col" aria-sort="<%= sorting.key === column ? (sorting.order === 'asc' ? 'ascending' : 'descending') : 'none' %>">
+  <a class="table-sort" data-sort-key="<%= column %>" href="<%= sortUrl(column) %>" aria-label="<%= t('table.sortLabel', { label, order: (sorting.key === column ? sorting.order !== 'asc' : ['name', 'ip', 'direction', 'resource', 'reason'].includes(column)) ? t('table.ascending') : t('table.descending') }) %>">
+    <span><%= label %></span><span class="sort-arrow" aria-hidden="true"><%= sorting.key === column ? (sorting.order === 'asc' ? '↑' : '↓') : '↕' %></span>
+  </a>
+</th>

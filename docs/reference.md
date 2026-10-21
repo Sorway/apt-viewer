@@ -1,81 +1,133 @@
 # Référence
 
-[← README](../README.md)
+[README](../README.md) · [Déploiement](deployment.md)
 
 ## Configuration
 
-Les paramètres sont lus depuis `.env`. Le fichier [`.env.example`](../.env.example) fournit la configuration de départ.
+Le service systemd lit `/etc/apt-viewer.env`. En local, `npm start` charge `.env`. Le fichier [`.env.example`](../.env.example) contient les options courantes.
 
-| Variable | Par défaut | Description |
-| :--- | :--- | :--- |
-| `HOST` | `127.0.0.1` | Adresse d’écoute |
-| `PORT` | `3000` | Port HTTP |
-| `LOG_PATH` | `/var/log/apt-cacher-ng/apt-cacher.log` | Journal à lire |
-| `POLL_MS` | `5000` | Intervalle de lecture, en millisecondes |
-| `MAX_BYTES` | `16777216` | Fenêtre de lecture : 16 Mio |
-| `MAX_EVENTS` | `50000` | Nombre maximal d’événements en mémoire |
-| `DEMO` | `false` | Affiche le bandeau de démonstration |
-| `ALLOW_REMOTE` | `false` | Autorise une écoute hors de la boucle locale |
+| Variable | Valeur par défaut | Usage |
+| --- | --- | --- |
+| `HOST` | `127.0.0.1` | Adresse d’écoute HTTP |
+| `PORT` | `3000` | Port HTTP, de `1` à `65535` |
+| `LOG_PATH` | `/var/log/apt-cacher-ng/apt-cacher.log` | Chemin du journal |
+| `POLL_MS` | `5000` | Intervalle de lecture en ms, de `1000` à `60000` |
+| `MAX_BYTES` | `16777216` | Octets lus en fin de fichier, de `1024` à `67108864` |
+| `MAX_EVENTS` | `50000` | Événements conservés en mémoire, de `1` à `200000` |
+| `ALLOW_REMOTE` | `false` | Autorise une adresse d’écoute autre que `127.0.0.1`, `::1` ou `localhost` si la valeur est `true` |
 
-L’accès réseau se configure avec un reverse proxy. Le [guide de déploiement](deployment.md) fournit une configuration Nginx avec TLS et authentification.
+Le nom du serveur affiché est son hostname système. Les dates sont affichées en `Europe/Paris` ; les champs de période utilisent UTC.
 
-Les dates sont affichées en **Europe/Paris**. Les champs de période utilisent **UTC**. Le nom du serveur affiché est son hostname système.
+## Langues
+
+Le français est la langue par défaut. Le sélecteur de langue conserve la préférence dans un cookie et garde la page, les filtres et le tri actuels.
+
+Les fichiers [`languages/fr.lang`](../languages/fr.lang) et [`languages/en.lang`](../languages/en.lang) sont des objets JSON en UTF-8. Chaque clé correspond à un texte de l’interface. Les valeurs peuvent contenir des paramètres comme `{count}` ou `{version}`.
+
+Pour ajouter une langue, copier `fr.lang` vers un fichier portant un code de deux lettres, puis traduire ses valeurs. `_name` est le nom affiché et `_locale` définit le format des nombres et des dates. Les clés absentes utilisent le texte français. Redémarrer le serveur après une modification des fichiers `.lang`.
+
+Les ressources et les motifs issus du journal gardent leur texte d’origine. Les heures restent affichées dans le fuseau `Europe/Paris`.
 
 ## Lecture du journal
 
-Par défaut, le lecteur relit les **16 Mio finaux** du fichier toutes les **5 secondes** et conserve jusqu’à **50 000 événements** en mémoire.
+Le lecteur relit la fin du fichier toutes les 5 secondes : au maximum 16 Mio et 50 000 événements avec les réglages par défaut. Les données restent en mémoire.
 
-- Les rotations et les troncatures du fichier courant sont prises en compte.
-- Les archives `.1` et `.gz` ne sont pas chargées.
-- Si la lecture échoue, le dernier état disponible reste affiché avec l’erreur.
-- Les noms de clients viennent du DNS inverse. Sans résultat, l’IP reste affichée.
+Les rotations et les troncatures du journal courant sont prises en compte. Les archives `.1` et `.gz` ne sont pas chargées. En cas d’échec de lecture, les dernières données restent disponibles avec un état d’erreur.
 
-## Format des lignes
+Les périodes 1 h, 24 h et 7 jours filtrent les données chargées. La durée disponible dépend du journal courant et des limites de lecture.
+
+Les noms des clients proviennent du DNS inverse. L’adresse IP reste affichée si la résolution échoue.
+
+## Format du journal
 
 ```text
 timestamp|direction|octets|IP|ressource
 ```
 
-| Direction | Signification |
-| :--- | :--- |
-| `I` | Reçu de l’amont |
-| `O` | Envoyé aux clients |
-| `E` | Erreur, avec son motif et un éventuel code HTTP |
+Le timestamp est exprimé en secondes Unix. Les lignes incomplètes ou invalides sont ignorées lors de la lecture ; une dernière ligne encore en cours d’écriture est relue au prochain passage.
+
+| Direction | Contenu |
+| --- | --- |
+| `I` | Données reçues de l’amont |
+| `O` | Données envoyées aux clients |
+| `E` | Erreur, avec un motif et éventuellement un code HTTP |
 
 ```text
 1792503600|O|1048576|192.0.2.10|deb.debian.org/debian/pool/package.deb
 1792503601|E|640|192.0.2.11|deb.debian.org/debian/dists/stable/InRelease [HTTP error, code: 503]
 ```
 
-Les statistiques comptent les événements du journal. Le format I/O ne fournit pas de taux exact de hits/misses. Les erreurs sont séparées des volumes transférés.
+Les codes HTTP sont extraits du motif `HTTP error, code: ...`. Une erreur peut donc apparaître sans code HTTP.
+
+## Mesures et graphiques
+
+| Mesure | Calcul |
+| --- | --- |
+| Téléchargements amont | Somme des octets des lignes `I` |
+| Transferts vers les clients | Somme des octets des lignes `O` |
+| Répartition par client ou dépôt | Nombre d’événements `I` et `O` |
+| Erreurs | Nombre de lignes `E` |
+
+Les camemberts affichent les sept premiers clients ou dépôts ; les suivants sont regroupés dans « Autres ». La courbe montre les octets entrants et sortants par intervalle, avec une échelle séparée pour le nombre d’erreurs.
+
+Les statistiques et les graphiques couvrent tous les résultats filtrés, y compris ceux des autres pages du tableau. Le journal ne permet pas de calculer un taux exact de hits et de misses.
 
 ## API
 
-| Route | Réponse |
-| :--- | :--- |
-| `GET /api/dashboard` | Statistiques et transferts paginés |
-| `GET /api/failures` | Échecs paginés et nombre d’erreurs avec un code HTTP |
-| `GET /api/client-names` | Correspondances IP → nom DNS |
-| `GET /healthz` | `200` si le journal est lisible, `503` sinon |
+### Vérification des mises à jour
 
-`/healthz` indique l’état du lecteur de journal, pas celui du service apt-cacher-ng.
+Le serveur compare sa version à celle du `package.json` de `master` sur GitHub, avec un cache d’une heure et un délai de réponse maximal de 5 secondes. Une panne réseau conserve le dernier résultat disponible. La version doit être augmentée dans `package.json` pour déclencher la bannière.
 
-### Filtres
-
-| Paramètre | Valeur |
-| :--- | :--- |
-| `ip` | Adresse IP exacte |
-| `endpoint` | Dépôt exact |
-| `q` | Recherche dans la ressource et, pour les échecs, dans le motif |
-| `from`, `to` | Bornes de période inclusives ; UTC si aucune zone n’est précisée |
-| `page` | Numéro de page, à partir de `1` ; 50 résultats par page |
-| `direction` | `I` ou `O`, sur `/api/dashboard` |
-| `code` | Code HTTP d’erreur, ou `unknown`, sur `/api/failures` |
-
-```http
-GET /api/dashboard?ip=192.0.2.10&direction=O&page=1
-GET /api/failures?code=503
-GET /api/failures?code=unknown&q=timed%20out
+```json
+{"current":"1.0.0","latest":"1.1.0","available":true}
 ```
 
-Les volumes et les graphiques couvrent toute la sélection filtrée, indépendamment de la pagination. Les graphiques regroupent les clients ou destinations après les sept premiers dans « Autres ».
+### Routes
+
+| Route | Réponse |
+| --- | --- |
+| `GET /api/dashboard` | Filtres, tri, état du lecteur, statistiques, courbe et transferts paginés |
+| `GET /api/failures` | Filtres, tri, état du lecteur, échecs paginés et nombre d’échecs avec un code HTTP |
+| `GET /api/client-names` | Objet associant les adresses IP aux noms DNS disponibles |
+| `GET /api/version` | Version installée, dernière version connue et disponibilité d’une mise à jour |
+| `GET /healthz` | `200` avec `{"ok":true}` si le journal est lisible ; `503` avec `{"ok":false}` sinon |
+
+`/healthz` contrôle la lecture du journal. Il ne vérifie pas le service apt-cacher-ng.
+
+### Filtres et pagination
+
+Ces paramètres s’utilisent sur `/api/dashboard` et `/api/failures`, ainsi que sur les pages de l’interface.
+
+| Paramètre | Valeurs |
+| --- | --- |
+| `ip` | Adresse IP exacte |
+| `endpoint` | Nom exact du dépôt |
+| `q` | Recherche dans la ressource et le motif de l’erreur, sans distinction de casse |
+| `from`, `to` | Dates inclusives ; les dates au format `YYYY-MM-DDTHH:mm` sont interprétées en UTC |
+| `period` | `1h`, `24h` ou `7d`, à partir de l’heure du serveur ; `from` ou `to` prend la priorité |
+| `direction` | `I` ou `O`, pour les transferts |
+| `code` | Code de `400` à `599`, ou `unknown` pour les erreurs sans code ; réservé aux échecs |
+| `page` | Numéro de page à partir de `1`, avec 50 résultats par page |
+| `sort` | Colonne selon la page, voir ci-dessous |
+| `order` | `asc` ou `desc` |
+
+Les dates et les tris invalides renvoient le statut `400`. Le tri s’applique avant la pagination.
+
+### Colonnes de tri
+
+| Page ou route | Colonnes | Tri par défaut |
+| --- | --- | --- |
+| Vue d’ensemble, Activité, `/api/dashboard` | `time`, `ip`, `direction`, `bytes`, `resource` | `time`, décroissant |
+| Clients et Dépôts | `name`, `in`, `out`, `count`, `last` | `out`, décroissant |
+| Échecs, `/api/failures` | `time`, `ip`, `statusCode`, `resource`, `reason` | `time`, décroissant |
+
+Les codes HTTP absents restent en fin de liste dans les deux sens de tri.
+
+### Exemples
+
+```sh
+curl 'http://127.0.0.1:3000/api/dashboard?ip=192.0.2.10&direction=O'
+curl 'http://127.0.0.1:3000/api/dashboard?period=24h&sort=bytes&order=desc'
+curl 'http://127.0.0.1:3000/api/failures?code=503'
+curl 'http://127.0.0.1:3000/api/failures?code=unknown&q=timed%20out'
+```

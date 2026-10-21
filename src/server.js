@@ -1,5 +1,5 @@
 import { createApp } from './app.js';
-import { createStore } from './reader.js';
+import { createStore } from './logs/reader.js';
 
 function readInteger(key, fallback, min, max) {
   const value = Number(process.env[key] ?? fallback);
@@ -25,7 +25,7 @@ await store.refresh();
 
 const timer = setInterval(() => store.refresh(), readInteger('POLL_MS', 5000, 1000, 60000));
 const port = readInteger('PORT', 3000, 1, 65535);
-const app = createApp(store, { demo: process.env.DEMO === 'true' });
+const app = createApp(store);
 const server = app.listen(port, host, () => {
   console.log(`apt-viewer écoute sur ${host}; état des logs: ${store.get().error || 'OK'}`);
 });

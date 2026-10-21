@@ -110,7 +110,13 @@ fi
 
 cp -- "$source_dir/package.json" "$source_dir/package-lock.json" "$source_dir/LICENSE" "$stage_dir/"
 cp -- "$source_dir/deploy/apt-viewer.service" "$work_dir/service.new"
-for directory in src views public; do cp -R -- "$source_dir/$directory" "$stage_dir/"; done
+for directory in src public; do cp -R -- "$source_dir/$directory" "$stage_dir/"; done
+if [[ -d "$source_dir/languages" ]]; then cp -R -- "$source_dir/languages" "$stage_dir/"; fi
+# Les anciennes versions placent les vues à la racine.
+if [[ -d "$source_dir/views" ]]; then cp -R -- "$source_dir/views" "$stage_dir/"; fi
+if [[ -f "$source_dir/update.sh" ]]; then
+  install -m 0755 "$source_dir/update.sh" "$stage_dir/update.sh"
+fi
 
 printf 'Installation de Node.js 24…\n'
 node_dist=https://nodejs.org/dist/latest-v24.x

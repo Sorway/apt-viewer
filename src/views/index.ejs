@@ -1,0 +1,76 @@
+<%- include('partials/shell') %>
+
+<section class="cards" aria-label="<%= t('common.statistics') %>">
+  <article class="stat-card" data-tone="out">
+    <div class="stat-header"><small class="stat-label"><%= t('stats.outgoing') %></small></div>
+    <h2><%= bytes(summary.outgoing) %></h2>
+  </article>
+  <article class="stat-card" data-tone="in">
+    <div class="stat-header"><small class="stat-label"><%= t('stats.incoming') %></small></div>
+    <h2><%= bytes(summary.incoming) %></h2>
+  </article>
+  <a class="stat-card stat-link" data-tone="clients" href="<%= filterUrl({}, '/clients') %>" aria-label="<%= t('stats.clientCount', { count: summary.clients.length.toLocaleString(locale) }) %>">
+    <div class="stat-header">
+      <small class="stat-label"><%= t('nav.clients') %></small>
+      <span class="stat-arrow" aria-hidden="true">↗</span>
+    </div>
+    <h2><%= summary.clients.length %></h2>
+  </a>
+  <a class="stat-card stat-link" data-tone="endpoints" href="<%= filterUrl({}, '/endpoints') %>" aria-label="<%= t('stats.endpointCount', { count: summary.endpoints.length.toLocaleString(locale) }) %>">
+    <div class="stat-header">
+      <small class="stat-label"><%= t('nav.endpoints') %></small>
+      <span class="stat-arrow" aria-hidden="true">↗</span>
+    </div>
+    <h2><%= summary.endpoints.length %></h2>
+  </a>
+</section>
+
+<%- include('partials/filters') %>
+
+<section class="panel timeline-panel" aria-labelledby="timeline-title" data-timeline="<%= JSON.stringify(timeline) %>">
+  <div class="timeline-heading">
+    <h3 id="timeline-title"><%= t('timeline.title') %></h3>
+    <div class="timeline-legend" aria-label="<%= t('timeline.legend') %>">
+      <span class="series-incoming"><%= t('common.incoming') %></span>
+      <span class="series-outgoing"><%= t('common.outgoing') %></span>
+      <span class="series-errors"><%= t('common.errors') %></span>
+    </div>
+  </div>
+  <% if (timeline.empty) { %>
+    <p class="chart-empty meta"><%= t('timeline.empty') %></p>
+  <% } else { %>
+    <div class="timeline-plot">
+      <svg class="timeline-svg" role="img" tabindex="0" aria-labelledby="timeline-title timeline-help"></svg>
+      <span id="timeline-help" class="visually-hidden"><%= t('timeline.help') %></span>
+      <div class="timeline-tooltip" hidden role="status">
+        <strong data-timeline-time></strong>
+        <span class="series-incoming"><%= t('common.incoming') %> <b data-timeline-incoming></b></span>
+        <span class="series-outgoing"><%= t('common.outgoing') %> <b data-timeline-outgoing></b></span>
+        <span class="series-errors"><%= t('common.errors') %> <b data-timeline-errors></b></span>
+      </div>
+    </div>
+  <% } %>
+</section>
+
+<div class="overview-charts">
+  <%- include('partials/activity-chart', {
+    chart: clientActivity,
+    chartId: 'client-activity',
+    title: t('charts.clients'),
+    column: t('common.client'),
+    clientChart: true,
+  }) %>
+  <%- include('partials/activity-chart', {
+    chart: destinationActivity,
+    chartId: 'destination-activity',
+    title: t('charts.destinations'),
+    column: t('common.destination'),
+    clientChart: false,
+  }) %>
+</div>
+
+<div class="overview-action">
+  <a class="button-secondary" href="<%= filterUrl({}, '/activity') %>"><%= t('charts.allActivity') %></a>
+</div>
+
+<%- include('partials/end') %>

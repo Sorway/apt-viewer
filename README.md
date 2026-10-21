@@ -1,118 +1,101 @@
 # apt-viewer
 
-<p align="center">
-  <a href="#démarrage">Démarrage</a> &nbsp;·&nbsp;
-  <a href="#configuration">Configuration</a> &nbsp;·&nbsp;
-  <a href="docs/deployment.md">Déploiement</a> &nbsp;·&nbsp;
-  <a href="docs/reference.md">Référence</a>
-</p>
+Interface web pour consulter le journal d’apt-cacher-ng : transferts, clients, dépôts et erreurs HTTP.
 
-**apt-viewer** affiche l’activité d’**apt-cacher-ng** : clients, dépôts, volumes transférés et erreurs HTTP.
+![Vue d’ensemble en thème sombre](docs/images/overview.png)
 
-![Vue d’ensemble d’apt-viewer en thème sombre](docs/images/overview.png)
+## Installation
 
-<details>
-<summary>Voir la page des échecs</summary>
-
-![Page des échecs avec codes HTTP et motifs](docs/images/failures.png)
-
-</details>
-
-## Dans l’interface
-
-- **Vue d’ensemble** — volumes et répartition de l’activité par client et destination.
-- **Clients et dépôts** — volumes entrants et sortants, noms DNS et dernière activité.
-- **Activité** — transferts et ressources, avec recherche et filtres.
-- **Échecs** — codes HTTP, motifs et ressources concernées.
-
-Recherche par IP ou nom DNS, filtres par période, thèmes clair et sombre, actualisation automatique toutes les 15 secondes.
-
-## Démarrage
-
-```sh
-git clone https://github.com/Sorway/apt-viewer.git
-cd apt-viewer
-```
-
-### Docker
-
-L’image est publiée sur [GitHub Container Registry](https://github.com/Sorway/apt-viewer/pkgs/container/apt-viewer) pour **amd64** et **arm64**.
-
-```sh
-docker compose pull
-docker compose up -d --no-build
-```
-
-Ouvrir **[localhost:3000](http://127.0.0.1:3000)**. Le répertoire `/var/log/apt-cacher-ng` du serveur est monté en lecture seule.
-
-Pour essayer avec les données de démonstration :
-
-```sh
-docker compose -f compose.yaml -f compose.demo.yaml up -d --no-build
-```
-
-[Configuration Docker, permissions et commandes →](docs/docker.md)
-
-### Linux — Debian / Ubuntu
-
-Sur la machine qui héberge apt-cacher-ng :
-
-```sh
-sudo bash install.sh
-```
-
-Ou sans cloner le dépôt :
+Sur le serveur apt-cacher-ng, avec Debian ou Ubuntu, systemd et curl :
 
 ```sh
 curl -fL https://raw.githubusercontent.com/Sorway/apt-viewer/master/install.sh -o install.sh
 sudo bash install.sh
 ```
 
-Le script installe **Node.js 24**, le compte `apt-viewer`, les droits de lecture du journal et le service **systemd**. L’application est installée dans `/opt/apt-viewer` et écoute sur **[localhost:3000](http://127.0.0.1:3000)**.
+Le script installe Node.js 24 et l’application dans `/opt/apt-viewer`, puis démarre le service `apt-viewer`. La configuration est enregistrée dans `/etc/apt-viewer.env`.
 
-La configuration se trouve dans `/etc/apt-viewer.env`. Pour mettre à jour, relancer le script : la configuration est conservée et la version précédente sauvegardée.
+L’interface écoute sur [127.0.0.1:3000](http://127.0.0.1:3000). Depuis un autre poste, ouvrir un tunnel SSH :
 
-[Configuration du service et Nginx →](docs/deployment.md)
+```sh
+ssh -L 3000:127.0.0.1:3000 utilisateur@serveur
+```
 
-## Configuration
+Pour changer le chemin du journal ou configurer Nginx, voir le [guide de déploiement](docs/deployment.md).
 
-| Variable | Par défaut |
-| :--- | :--- |
-| `HOST` | `127.0.0.1` |
-| `PORT` | `3000` |
-| `LOG_PATH` | `/var/log/apt-cacher-ng/apt-cacher.log` |
+## Mise à jour
 
-L’application lit directement le journal et conserve les données en mémoire. Aucune base de données à configurer.
+```sh
+curl -fsSL https://raw.githubusercontent.com/Sorway/apt-viewer/master/update.sh | sudo bash -s
+```
 
-Les limites de lecture, le rafraîchissement et les autres options sont détaillés dans la [référence](docs/reference.md#configuration).
+La commande récupère le script de mise à jour depuis GitHub, puis l’exécute. Il installe `master`, conserve la configuration et sauvegarde l’installation précédente. Si le service ne redémarre pas correctement, celle-ci est restaurée.
 
-## Déploiement
+La version installée figure dans le footer. Le menu **Mise à jour** permet de copier la commande.
 
-Le guide [**Docker Compose**](docs/docker.md) couvre le montage des journaux, les permissions et les mises à jour de l’image.
+Une bannière signale les nouvelles versions publiées dans le `package.json` de `master`. La vérification a lieu une fois par heure ; une bannière masquée reste cachée jusqu’à la version suivante.
 
-Le guide [**Debian / Ubuntu**](docs/deployment.md) couvre l’installation, les permissions du journal, systemd et Nginx avec TLS et authentification.
+[Choisir une version](docs/deployment.md#choisir-une-version).
 
-## API
+## Interface
 
-| Route | Contenu |
-| :--- | :--- |
-| `GET /api/dashboard` | Statistiques et transferts paginés |
-| `GET /api/failures` | Échecs et codes HTTP |
-| `GET /api/client-names` | Noms DNS des clients |
-| `GET /healthz` | État de lecture du journal |
+| Page | Contenu |
+| --- | --- |
+| Vue d’ensemble | Volumes, courbe d’activité et répartition par client et dépôt |
+| Clients | Volumes transférés, noms DNS et dernière activité |
+| Dépôts | Volumes transférés et dernière activité |
+| Activité | Transferts et ressources demandées |
+| Échecs | Codes HTTP, motifs et ressources concernées |
 
-[Filtres, exemples et format des journaux →](docs/reference.md)
+Les filtres se mettent à jour automatiquement. Un clic sur une colonne trie le tableau. L’interface propose un thème clair, un thème sombre et une actualisation automatique toutes les 15 secondes.
 
-## Développement
+Le sélecteur de langue utilise les drapeaux français et britannique et mémorise le choix. Les traductions se trouvent dans [`languages/`](languages/).
+
+[Capture de la page des échecs](docs/images/failures.png).
+
+## Lancer en local
 
 Avec Node.js 24 et npm :
 
 ```sh
+git clone https://github.com/Sorway/apt-viewer.git
+cd apt-viewer
 npm ci
-npm run demo
+cp .env.example .env
 ```
 
-La démonstration utilise les journaux de [`sample/`](sample/). Pour utiliser un autre journal, copier `.env.example` vers `.env`, adapter `LOG_PATH`, puis lancer `npm start`.
+Renseigner le chemin du journal dans `LOG_PATH`, dans le fichier `.env`, puis démarrer le serveur :
+
+```sh
+npm start
+```
+
+## Arborescence
+
+```text
+src/
+  app.js          Application Express et routes
+  server.js       Démarrage du serveur
+  updates.js      Vérification des versions sur GitHub
+  i18n.js         Chargement des langues
+  dashboard/      Filtres, tris, statistiques et DNS
+  logs/           Lecture et analyse du journal
+  views/          Pages et composants EJS
+public/
+  css/            Styles
+  js/             Scripts du navigateur
+  images/         Logo
+deploy/           Configuration systemd et Nginx
+docs/             Documentation et captures
+languages/        Traductions .lang en français et en anglais
+install.sh        Installation Linux
+update.sh         Mise à jour
+```
+
+## Documentation
+
+- [Déploiement](docs/deployment.md) : installation, service systemd, mise à jour et Nginx.
+- [Référence](docs/reference.md) : variables de configuration, format du journal, filtres et API.
 
 ## Licence
 

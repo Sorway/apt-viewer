@@ -1,0 +1,51 @@
+<!doctype html>
+<% const errorAssetUrl = typeof assetUrl === 'function' ? assetUrl : file => `/assets/${file}`; %>
+<html lang="<%= lang %>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= t('errors.internal') %> · apt-viewer</title>
+  <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+  <script src="<%= errorAssetUrl('js/theme.js') %>"></script>
+  <link rel="stylesheet" href="<%= errorAssetUrl('css/style.css') %>">
+  <script src="<%= errorAssetUrl('js/error.js') %>" defer></script>
+</head>
+<body class="error-page">
+  <a class="skip-link" href="#main"><%= t('shell.skip') %></a>
+  <header class="app-bar">
+    <div class="bar-inner">
+      <a class="brand" href="/" aria-label="<%= t('shell.home') %>">
+        <img src="/assets/images/logo.svg" alt="" width="28" height="28">
+        <span class="logo">apt-viewer</span>
+      </a>
+      <div class="bar-tools"><%- include('partials/language-switch') %></div>
+    </div>
+  </header>
+  <main id="main" class="error-main" tabindex="-1">
+    <section class="error-content" aria-labelledby="error-title">
+      <div class="error-code-panel" aria-label="HTTP 500">
+        <span class="error-code" aria-hidden="true">500</span>
+        <span class="error-status" aria-hidden="true"><%= t('errors.server') %></span>
+      </div>
+      <div class="error-message">
+        <h1 id="error-title"><%= t('errors.internal') %></h1>
+        <p><%= t('errors.description') %></p>
+        <div class="error-actions">
+          <button type="button" id="retry-page">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg>
+            <%= t('common.retry') %>
+          </button>
+          <a class="button-secondary" href="/"><%= t('errors.dashboard') %></a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="error-footer">
+    <span>apt-viewer<% if (typeof appVersion !== 'undefined') { %> <span class="footer-version" aria-label="<%= t('update.installed', { version: appVersion }) %>">v<%= appVersion %></span><% } %></span>
+    <div>
+      <a href="https://github.com/Sorway/apt-viewer" target="_blank" rel="noopener noreferrer" aria-label="<%= t('footer.githubShort') %>">GitHub</a>
+      <a href="https://github.com/Sorway/apt-viewer/blob/master/LICENSE" target="_blank" rel="noopener noreferrer" aria-label="<%= t('footer.licenseLabel') %>"><%= t('footer.license') %></a>
+    </div>
+  </footer>
+</body>
+</html>

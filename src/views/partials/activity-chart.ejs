@@ -1,0 +1,89 @@
+<%
+  const singleUnit = clientChart ? t('common.clientLower') : t('common.endpointLower');
+  const multipleUnits = clientChart ? t('common.clientsLower') : t('common.endpointsLower');
+%>
+<section class="panel client-activity" aria-labelledby="<%= chartId %>-title" data-chart-kind="<%= clientChart ? 'clients' : 'destinations' %>">
+  <div class="chart-heading">
+    <h3 id="<%= chartId %>-title"><%= title %></h3>
+    <div class="chart-total">
+      <strong><%= chart.total.toLocaleString(locale) %></strong>
+      <span><%= t('common.eventsLower') %></span>
+    </div>
+  </div>
+  <% if (chart.total) { %>
+    <div class="chart-layout">
+      <div class="pie-figure">
+        <svg class="client-pie" width="300" height="300" viewBox="0 0 240 240" role="img"
+          aria-labelledby="<%= chartId %>-title" aria-describedby="<%= chartId %>-desc" focusable="false">
+          <desc id="<%= chartId %>-desc"><%= t('charts.description') %></desc>
+          <% for (const slice of chart.slices) { %>
+            <%
+              const count = slice.count.toLocaleString(locale);
+              const share = slice.share.toLocaleString(locale, { maximumFractionDigits: 1 });
+              const sliceName = slice.other ? t('common.other') : slice.name;
+            %>
+            <path
+              class="chart-color-<%= slice.index %>"
+              d="<%= slice.path %>"
+              data-chart-slice="<%= slice.index %>"
+              data-label="<%= sliceName %>"
+              data-count="<%= count %>"
+              data-share="<%= share %>"
+              focusable="false"
+              aria-label="<%= t('charts.slice', { name: sliceName, count, share }) %>"
+            ></path>
+          <% } %>
+          <circle class="pie-center" cx="120" cy="120" r="72"></circle>
+          <text class="pie-count" x="120" y="119" text-anchor="middle"><%= chart.groups.toLocaleString(locale) %></text>
+          <text class="pie-unit" x="120" y="142" text-anchor="middle"><%= chart.groups === 1 ? singleUnit : multipleUnits %></text>
+        </svg>
+        <div class="pie-tooltip" id="<%= chartId %>-tooltip" role="tooltip" hidden>
+          <strong class="pie-tooltip-name"></strong>
+          <span class="pie-tooltip-values"></span>
+        </div>
+      </div>
+      <div class="chart-legend" role="region" aria-label="<%= title %>">
+        <table>
+          <caption class="visually-hidden"><%= t('charts.ranking', { column }) %></caption>
+          <thead>
+            <tr>
+              <th scope="col"><%= column %></th>
+              <th scope="col"><%= t('common.events') %></th>
+              <th scope="col"><%= t('charts.share') %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% for (const slice of chart.slices) { %>
+              <%
+                const client = clientChart && !slice.other ? clientName(slice.name) : '';
+                const filter = clientChart ? { ip: slice.name } : { endpoint: slice.name };
+              %>
+              <tr data-chart-row="<%= slice.index %>">
+                <td>
+                  <span class="chart-swatch chart-color-<%= slice.index %>" aria-hidden="true"></span>
+                  <% if (!slice.other) { %>
+                    <a href="<%= filterUrl(filter, '/activity') %>" aria-describedby="<%= chartId %>-tooltip"
+                      <% if (clientChart) { %>data-client-ip="<%= slice.name %>"<% } %>>
+                      <% if (clientChart) { %>
+                        <span class="client-address"><%= slice.name %></span>
+                        <span class="client-host"><%= client %></span>
+                      <% } else { %>
+                        <%= slice.name %>
+                      <% } %>
+                    </a>
+                  <% } else { %>
+                    <%= t('common.other') %>
+                  <% } %>
+                </td>
+                <td><%= slice.count.toLocaleString(locale) %></td>
+                <td><%= slice.share.toLocaleString(locale, { maximumFractionDigits: 1 }) %> %</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } else { %>
+    <p class="chart-empty"><%= t('charts.empty') %></p>
+  <% } %>
+</section>

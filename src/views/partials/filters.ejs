@@ -1,0 +1,129 @@
+<section class="filter-panel" aria-labelledby="filter-title">
+  <div class="filter-heading">
+    <h2 id="filter-title"><%= t('filters.title') %></h2>
+    <span><%= total.toLocaleString(locale) %> <%= t(failures ? 'common.failuresLower' : 'common.eventsLower') %></span>
+  </div>
+  <form method="get" action="<%= basePath %>" class="filters">
+    <input type="hidden" name="sort" value="<%= sorting.key %>">
+    <input type="hidden" name="order" value="<%= sorting.order %>">
+    <input type="hidden" name="period" value="<%= q.period %>">
+    <label class="search-field">
+      <span><%= failures ? t('filters.resourceReason') : t('common.resource') %></span>
+      <span class="search-control">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      <input
+        type="search"
+        name="q"
+        value="<%= q.q %>"
+        placeholder="<%= failures ? t('filters.searchFailures') : t('filters.searchResource') %>"
+        maxlength="200"
+      >
+      <kbd aria-hidden="true">/</kbd>
+      </span>
+    </label>
+    <div class="select-field">
+      <label for="client-ip"><%= t('filters.clientIp') %></label>
+      <select id="client-ip" name="ip" data-search-select data-search-placeholder="<%= t('filters.searchClient') %>">
+        <option value=""><%= t('filters.allClients') %></option>
+        <% if (q.ip && !options.clients.some(client => client.name === q.ip)) { %>
+          <option value="<%= q.ip %>" selected><%= q.ip %> · <%= t('filters.outside') %></option>
+        <% } %>
+        <% for (const client of options.clients) { %>
+          <% const name = clientName(client.name); %>
+          <option value="<%= client.name %>" data-client-ip="<%= client.name %>" <%= q.ip === client.name ? 'selected' : '' %>><%= client.name %><%= name ? ` (${name})` : '' %></option>
+        <% } %>
+      </select>
+    </div>
+    <div class="select-field">
+      <label for="endpoint-filter"><%= t('common.endpoint') %></label>
+      <select id="endpoint-filter" name="endpoint" data-search-select data-search-placeholder="<%= t('filters.searchEndpoint') %>">
+        <option value=""><%= t('filters.allEndpoints') %></option>
+        <% if (q.endpoint && !options.endpoints.some(endpoint => endpoint.name === q.endpoint)) { %>
+          <option value="<%= q.endpoint %>" selected><%= q.endpoint %> · <%= t('filters.outside') %></option>
+        <% } %>
+        <% for (const endpoint of options.endpoints) { %>
+          <option <%= q.endpoint === endpoint.name ? 'selected' : '' %>><%= endpoint.name %></option>
+        <% } %>
+      </select>
+    </div>
+    <% if (failures) { %>
+      <div class="select-field flow-field">
+        <label for="http-code"><%= t('filters.httpCode') %></label>
+        <select id="http-code" name="code">
+          <option value=""><%= t('filters.allCodes') %></option>
+          <% if (q.code && q.code !== 'unknown' && !codes.includes(Number(q.code))) { %>
+            <option value="<%= q.code %>" selected><%= q.code %> · <%= t('filters.outside') %></option>
+          <% } %>
+          <% for (const code of codes) { %>
+            <option value="<%= code %>" <%= q.code === String(code) ? 'selected' : '' %>><%= code %></option>
+          <% } %>
+          <option value="unknown" <%= q.code === 'unknown' ? 'selected' : '' %>><%= t('filters.unknownCode') %></option>
+        </select>
+      </div>
+    <% } else { %>
+      <div class="select-field flow-field">
+        <label for="flow-filter"><%= t('common.flow') %></label>
+        <select id="flow-filter" name="direction">
+          <option value=""><%= t('filters.allDirections') %></option>
+          <option value="I" <%= q.direction === 'I' ? 'selected' : '' %>><%= t('filters.incoming') %></option>
+          <option value="O" <%= q.direction === 'O' ? 'selected' : '' %>><%= t('filters.outgoing') %></option>
+        </select>
+      </div>
+    <% } %>
+    <div class="filter-footer">
+    <div class="date-filters">
+      <nav class="period-shortcuts" aria-label="<%= t('filters.period') %>">
+        <% for (const [value, label] of [['', t('filters.allTime')], ['1h', t('filters.hour')], ['24h', t('filters.day')], ['7d', t('filters.week')]]) { %>
+          <a href="<%= filterUrl({ period: value, from: '', to: '' }) %>" data-period="<%= value %>" <%- q.period === value && !q.from && !q.to ? 'aria-current="true"' : '' %>><%= label %></a>
+        <% } %>
+      </nav>
+    <details class="custom-period" data-active="<%= Boolean(q.from || q.to) %>">
+      <summary>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18"/></svg>
+        <span><%= t('filters.dates') %></span>
+      </summary>
+      <div class="date-popover">
+        <div class="date-popover-heading">
+          <strong><%= t('filters.customPeriod') %></strong>
+          <span class="date-timezone">UTC</span>
+          <button type="button" class="date-close" aria-label="<%= t('filters.closeDates') %>">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg>
+          </button>
+        </div>
+        <div class="date-fields">
+          <label>
+            <%= t('filters.from') %>
+            <input type="datetime-local" name="from" value="<%= q.from %>" aria-label="<%= t('filters.fromUtc') %>">
+          </label>
+          <label>
+            <%= t('filters.to') %>
+            <input type="datetime-local" name="to" value="<%= q.to %>" aria-label="<%= t('filters.toUtc') %>">
+          </label>
+        </div>
+        <p class="date-feedback" role="status" hidden></p>
+        <div class="date-popover-footer">
+          <button type="button" class="date-clear" <%= q.from || q.to ? '' : 'disabled' %>><%= t('filters.clearDates') %></button>
+        </div>
+      </div>
+    </details>
+    </div>
+    <div class="filter-actions" <%= activeFilters.length ? '' : 'hidden' %>>
+      <% if (activeFilters.length) { %>
+        <a class="button-secondary" data-reset-filters href="<%= basePath %>" aria-label="<%= t('filters.resetAll') %>"><%= t('filters.reset') %></a>
+      <% } %>
+    </div>
+    </div>
+    <noscript><button type="submit"><%= t('filters.submit') %></button></noscript>
+    <p class="filter-feedback" role="status" hidden></p>
+  </form>
+  <% if (activeFilters.length) { %>
+    <div class="active-filters" aria-label="<%= t('filters.active') %>">
+      <% for (const filter of activeFilters) { %>
+        <a class="filter-chip" data-remove-filter="<%= filter.key %>" href="<%= filter.url %>" aria-label="<%= t('filters.remove', { label: filter.label, value: filter.value }) %>">
+          <span><%= filter.label %> : <%= filter.value %></span>
+          <span aria-hidden="true">×</span>
+        </a>
+      <% } %>
+    </div>
+  <% } %>
+</section>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="<%= lang %>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= pageTitle %> · apt-viewer · <%= name %></title>
+  <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+  <script src="<%= assetUrl('js/theme.js') %>"></script>
+  <link rel="stylesheet" href="<%= assetUrl('css/style.css') %>">
+  <script id="language-data" type="application/json"><%- languageData %></script>
+  <script src="<%= assetUrl('js/i18n.js') %>" defer></script>
+  <script src="<%= assetUrl('js/app.js') %>" defer></script>
+  <script src="<%= assetUrl('js/pagination.js') %>" defer></script>
+  <script src="<%= assetUrl('js/updates.js') %>" defer></script>
+  <% if (screen === 'overview') { %><script src="<%= assetUrl('js/timeline.js') %>" defer></script><% } %>
+</head>
+<body data-screen="<%= screen %>">
+  <a class="skip-link" href="#main"><%= t('shell.skip') %></a>
+  <div class="app-bar">
+    <div class="bar-inner">
+      <a class="brand" href="<%= filterUrl({}, '/') %>" aria-label="<%= t('shell.home') %>">
+        <img src="/assets/images/logo.svg" alt="" width="28" height="28">
+        <span class="logo">apt-viewer</span>
+      </a>
+      <nav class="primary-nav" aria-label="<%= t('shell.navigation') %>">
+        <% for (const item of navigation) { %>
+          <a href="<%= filterUrl({}, item.path) %>" class="<%= screen === item.id ? 'active' : '' %> <%= item.id === 'failures' ? 'failures-link' : '' %>"
+            data-nav-page="<%= item.id %>" <%- screen === item.id ? 'aria-current="page"' : '' %>>
+            <span class="nav-label">
+              <% if (item.id === 'overview') { %>
+                <span class="nav-label-full"><%= item.title %></span><span class="nav-label-short"><%= t('nav.overviewShort') %></span>
+              <% } else { %><%= item.title %><% } %>
+            </span>
+            <% if (item.id === 'failures') { %>
+              <span class="nav-count <%= failureCount ? 'nav-count-error' : '' %>" title="<%= t('shell.failuresTitle') %>"><%= failureCount.toLocaleString(locale) %></span>
+            <% } %>
+          </a>
+        <% } %>
+      </nav>
+      <div class="bar-tools">
+        <div class="bar-server">
+        <%- include('server-icon') %>
+        <span title="<%= name %>"><%= name %></span>
+        </div>
+        <%- include('language-switch') %>
+        <div class="theme-switch" role="group" aria-label="<%= t('theme.label') %>">
+          <button type="button" data-theme-choice="light" aria-pressed="false" title="<%= t('theme.lightTitle') %>">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+            <span class="visually-hidden"><%= t('theme.light') %></span>
+          </button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false" title="<%= t('theme.darkTitle') %>">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14A8.7 8.7 0 0 1 10 3.5 8.8 8.8 0 1 0 20.5 14Z"/></svg>
+            <span class="visually-hidden"><%= t('theme.dark') %></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <main id="main" tabindex="-1">
+    <aside class="update-banner" hidden aria-label="<%= t('update.availableLabel') %>">
+      <p role="status"><%= t('update.version') %> <strong data-update-version></strong> <%= t('update.available') %></p>
+      <a href="https://github.com/Sorway/apt-viewer/commits/master/" target="_blank" rel="noopener noreferrer" aria-label="<%= t('update.changesLabel') %>"><%= t('update.changes') %></a>
+      <button type="button" data-dismiss-update aria-label="<%= t('update.dismiss') %>">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg>
+      </button>
+    </aside>
+    <header class="page-header">
+      <div class="page-intro">
+        <h1><%= pageTitle %></h1>
+        <div class="read-status">
+          <span class="read-state <%= status.error ? 'read-state-error' : '' %>"><%= status.error ? t('read.failed') : t('read.ok') %></span>
+          <% if (status.readAt) { %>
+            <time datetime="<%= status.readAt %>" title="<%= t('read.last', { date: date(Date.parse(status.readAt)) }) %>"><%= t('read.time', { time: clock(Date.parse(status.readAt)) }) %></time>
+          <% } else { %>
+            <span><%= t('read.waiting') %></span>
+          <% } %>
+          <% if (status.invalid) { %>
+            <span><%= t('read.ignored', { count: status.invalid.toLocaleString(locale) }) %></span>
+          <% } %>
+          <% if (status.truncated) { %>
+            <span class="window-warning"><%= t('read.partial') %></span>
+          <% } %>
+        </div>
+      </div>
+      <div class="refresh">
+        <button id="refresh" class="button-secondary" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg>
+          <span><%= t('refresh.action') %></span>
+        </button>
+        <label class="auto-refresh">
+          <input type="checkbox" id="auto" role="switch" aria-label="<%= t('refresh.autoLabel') %>">
+          <span><%= t('refresh.auto') %></span>
+        </label>
+        <span id="refresh-status" class="refresh-status" role="status"></span>
+      </div>
+    </header>
+    <% if (status.error) { %>
+      <div class="alert" role="alert">
+        <%= t('read.unavailable', { code: status.error }) %>
+      </div>
+    <% } %>

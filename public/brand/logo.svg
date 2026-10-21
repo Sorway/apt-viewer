@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="title">
-  <title id="title">apt-viewer</title>
-  <path d="M6 32c6-10 14-16 26-16s20 6 26 16c-6 10-14 16-26 16S12 42 6 32Z" stroke="#78aef5" stroke-width="3.5" stroke-linejoin="round"/>
-  <path d="m32 22 9 5v10l-9 5-9-5V27l9-5Z" fill="#78aef5"/>
-  <path d="m24 27.5 8 4.5 8-4.5M32 32v9" stroke="#0e0e0e" stroke-width="2" stroke-linejoin="round"/>
-</svg>

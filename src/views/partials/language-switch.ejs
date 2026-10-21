@@ -1,0 +1,12 @@
+<nav class="language-switch" aria-label="<%= t('language.label') %>">
+  <% const flags = { fr: 'fr', en: 'gb' }; %>
+  <% for (const language of languages) { %>
+    <a href="<%= languageUrl(language.code) %>" lang="<%= language.code %>" hreflang="<%= language.code %>" title="<%= language.name %>" aria-label="<%= language.name %>" <%- language.code === lang ? 'aria-current="true"' : '' %>>
+      <% if (flags[language.code]) { %>
+        <img src="/assets/images/flags/<%= flags[language.code] %>.svg" alt="" width="20" height="14">
+      <% } else { %>
+        <%= language.code.toUpperCase() %>
+      <% } %>
+    </a>
+  <% } %>
+</nav>

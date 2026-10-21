@@ -1,0 +1,21 @@
+<%
+  const firstResult = resultTotal ? (page - 1) * pageSize + 1 : 0;
+  const lastResult = Math.min(page * pageSize, resultTotal);
+%>
+<nav class="pagination" aria-label="<%= t('pagination.label', { title: pageTitle }) %>">
+  <span class="result-range"><%= t('pagination.range', { first: firstResult.toLocaleString(locale), last: lastResult.toLocaleString(locale), total: resultTotal.toLocaleString(locale) }) %></span>
+  <div>
+    <% if (page > 1) { %>
+      <a class="page-button" href="<%= pageUrl(page - 1) %>#results" rel="prev"><%= t('pagination.previous') %></a>
+    <% } else { %>
+      <span class="page-button" aria-disabled="true"><%= t('pagination.previous') %></span>
+    <% } %>
+    <span class="pagination-page" tabindex="-1"><%= t('pagination.page', { page, pages }) %></span>
+    <% if (page < pages) { %>
+      <a class="page-button page-next" href="<%= pageUrl(page + 1) %>#results" rel="next"><%= t('pagination.next') %></a>
+    <% } else { %>
+      <span class="page-button page-next" aria-disabled="true"><%= t('pagination.next') %></span>
+    <% } %>
+  </div>
+  <span class="pagination-feedback" role="status" aria-live="polite" hidden></span>
+</nav>
