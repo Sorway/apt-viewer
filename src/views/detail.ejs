@@ -1,0 +1,34 @@
+<%- include('partials/shell') %>
+
+<section class="cards" aria-label="<%= t('common.statistics') %>">
+  <article class="stat-card" data-tone="out">
+    <small class="stat-label"><%= t('stats.outgoing') %></small>
+    <h2><%= bytes(summary.outgoing) %></h2>
+  </article>
+  <article class="stat-card" data-tone="in">
+    <small class="stat-label"><%= t('stats.incoming') %></small>
+    <h2><%= bytes(summary.incoming) %></h2>
+  </article>
+  <article class="stat-card" data-tone="error">
+    <small class="stat-label"><%= t('nav.failures') %></small>
+    <h2><%= profile.errors.toLocaleString(locale) %></h2>
+  </article>
+  <article class="stat-card">
+    <small class="stat-label"><%= t('table.lastActivity') %></small>
+    <h2 class="stat-date"><%= profile.last === null ? '—' : date(profile.last) %></h2>
+  </article>
+</section>
+
+<%- include('partials/filters') %>
+<%- include('partials/timeline') %>
+
+<section class="panel entity-failures" aria-labelledby="entity-failures-title">
+  <div class="table-heading">
+    <h3 id="entity-failures-title"><%= t('failureGroups.title') %> <span><%= profile.failureGroups.length.toLocaleString(locale) %></span></h3>
+    <a class="button-secondary" href="<%= filterUrl({ direction: '' }, '/failures') %>"><%= t('entity.allErrors') %></a>
+  </div>
+  <%- include('partials/failure-groups', { rows: profile.failureGroups.slice(0, 10), canSort: false }) %>
+</section>
+
+<%- include('partials/transfers') %>
+<%- include('partials/end') %>

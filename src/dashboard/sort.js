@@ -6,6 +6,7 @@ const columns = {
   endpoints: ['name', 'in', 'out', 'count', 'last'],
   activity: ['time', 'ip', 'direction', 'bytes', 'resource'],
   failures: ['time', 'ip', 'statusCode', 'resource', 'reason'],
+  failureGroups: ['count', 'clientCount', 'statusCode', 'resource', 'reason', 'first', 'last'],
 };
 const textOrder = new Intl.Collator('fr', { numeric: true, sensitivity: 'base' });
 
@@ -14,7 +15,8 @@ export function defaultOrder(key) {
 }
 
 export function readSort(query, screen) {
-  const key = query.sort ?? (['clients', 'endpoints'].includes(screen) ? 'out' : 'time');
+  const fallback = screen === 'failureGroups' ? 'last' : ['clients', 'endpoints'].includes(screen) ? 'out' : 'time';
+  const key = query.sort ?? fallback;
   const order = query.order ?? defaultOrder(key);
   if (!columns[screen].includes(key) || !['asc', 'desc'].includes(order)) {
     throw new InvalidFilterError();

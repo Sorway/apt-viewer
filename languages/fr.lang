@@ -168,5 +168,22 @@
   "http.502": "Réponse amont invalide",
   "http.503": "Service indisponible",
   "http.504": "Délai de réponse amont dépassé",
-  "units.bytes": "o|Kio|Mio|Gio|Tio|Pio"
+  "units.bytes": "o|Kio|Mio|Gio|Tio|Pio",
+  "failureGroups.title": "Erreurs regroupées",
+  "failureGroups.view": "Affichage des erreurs",
+  "failureGroups.grouped": "Regroupées",
+  "failureGroups.events": "Événements",
+  "failureGroups.occurrences": "Occurrences",
+  "failureGroups.last": "Dernière apparition",
+  "failureGroups.firstDate": "Première apparition : {date}",
+  "failureGroups.open": "Voir les occurrences →",
+  "failureGroups.error": "Erreur",
+  "failureGroups.selected": "Sélectionnée",
+  "entity.open": "Ouvrir la fiche",
+  "entity.openClient": "Ouvrir la fiche client",
+  "entity.client": "Fiche client",
+  "entity.endpoint": "Fiche dépôt",
+  "entity.breadcrumb": "Fil d’Ariane",
+  "entity.recentTransfers": "Derniers transferts",
+  "entity.allErrors": "Voir toutes les erreurs →"
 }

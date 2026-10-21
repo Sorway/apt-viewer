@@ -74,6 +74,14 @@ Les statistiques et les graphiques couvrent tous les résultats filtrés, y comp
 
 ## API
 
+### Erreurs regroupées et fiches
+
+Un groupe réunit les erreurs ayant le même code HTTP, la même ressource et le même motif, tous clients confondus. Il contient le nombre d’occurrences, les clients concernés, la première et la dernière apparition. Le regroupement est effectué après les filtres et avant la pagination.
+
+`/failures` affiche les groupes par défaut. `view=events` affiche les lignes du journal ; `error` limite cette vue à un groupe précis.
+
+Les pages `/clients/:ip` et `/endpoints/:depot` réunissent les volumes, la courbe d’activité, les erreurs et les transferts de l’identifiant demandé. Les valeurs dans le chemin doivent être encodées dans l’URL. Les fiches acceptent les mêmes filtres de période et de ressource que la page Activité.
+
 ### Vérification des mises à jour
 
 Le serveur compare sa version à celle du `package.json` de `master` sur GitHub, avec un cache d’une heure et un délai de réponse maximal de 5 secondes. Une panne réseau conserve le dernier résultat disponible. La version doit être augmentée dans `package.json` pour déclencher la bannière.
@@ -88,6 +96,7 @@ Le serveur compare sa version à celle du `package.json` de `master` sur GitHub,
 | --- | --- |
 | `GET /api/dashboard` | Filtres, tri, état du lecteur, statistiques, courbe et transferts paginés |
 | `GET /api/failures` | Filtres, tri, état du lecteur, échecs paginés et nombre d’échecs avec un code HTTP |
+| `GET /api/failure-groups` | Échecs regroupés et paginés : `id`, `count`, `clients`, `clientCount`, `first`, `last`, code, ressource et motif ; `total` compte les occurrences, `groupTotal` les groupes |
 | `GET /api/client-names` | Objet associant les adresses IP aux noms DNS disponibles |
 | `GET /api/version` | Version installée, dernière version connue et disponibilité d’une mise à jour |
 | `GET /healthz` | `200` avec `{"ok":true}` si le journal est lisible ; `503` avec `{"ok":false}` sinon |
@@ -107,6 +116,8 @@ Ces paramètres s’utilisent sur `/api/dashboard` et `/api/failures`, ainsi que
 | `period` | `1h`, `24h` ou `7d`, à partir de l’heure du serveur ; `from` ou `to` prend la priorité |
 | `direction` | `I` ou `O`, pour les transferts |
 | `code` | Code de `400` à `599`, ou `unknown` pour les erreurs sans code ; réservé aux échecs |
+| `error` | Identifiant `id` d’un groupe renvoyé par `/api/failure-groups`, pour filtrer les erreurs |
+| `view` | `groups` ou `events`, sur la page `/failures` |
 | `page` | Numéro de page à partir de `1`, avec 50 résultats par page |
 | `sort` | Colonne selon la page, voir ci-dessous |
 | `order` | `asc` ou `desc` |
@@ -119,7 +130,8 @@ Les dates et les tris invalides renvoient le statut `400`. Le tri s’applique a
 | --- | --- | --- |
 | Vue d’ensemble, Activité, `/api/dashboard` | `time`, `ip`, `direction`, `bytes`, `resource` | `time`, décroissant |
 | Clients et Dépôts | `name`, `in`, `out`, `count`, `last` | `out`, décroissant |
-| Échecs, `/api/failures` | `time`, `ip`, `statusCode`, `resource`, `reason` | `time`, décroissant |
+| Événements d’échec, `/api/failures` | `time`, `ip`, `statusCode`, `resource`, `reason` | `time`, décroissant |
+| Erreurs regroupées, `/api/failure-groups` | `count`, `clientCount`, `statusCode`, `resource`, `reason`, `first`, `last` | `last`, décroissant |
 
 Les codes HTTP absents restent en fin de liste dans les deux sens de tri.
 
@@ -129,5 +141,6 @@ Les codes HTTP absents restent en fin de liste dans les deux sens de tri.
 curl 'http://127.0.0.1:3000/api/dashboard?ip=192.0.2.10&direction=O'
 curl 'http://127.0.0.1:3000/api/dashboard?period=24h&sort=bytes&order=desc'
 curl 'http://127.0.0.1:3000/api/failures?code=503'
+curl 'http://127.0.0.1:3000/api/failure-groups?code=503&sort=count&order=desc'
 curl 'http://127.0.0.1:3000/api/failures?code=unknown&q=timed%20out'
 ```

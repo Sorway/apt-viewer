@@ -1,0 +1,47 @@
+<section class="panel" id="results">
+  <div class="table-heading"><h3><%= t(entity ? 'entity.recentTransfers' : 'nav.activity') %> <span><%= total.toLocaleString(locale) %></span></h3></div>
+  <div class="scroll" tabindex="0" role="region" aria-label="<%= t('table.data') %>">
+    <table>
+      <thead>
+        <tr>
+          <%- include('sort-header', { column: 'time', label: t('common.date') }) %>
+          <%- include('sort-header', { column: 'ip', label: t('common.client') }) %>
+          <%- include('sort-header', { column: 'direction', label: t('common.flow') }) %>
+          <%- include('sort-header', { column: 'bytes', label: t('common.volume') }) %>
+          <%- include('sort-header', { column: 'resource', label: t('common.resource') }) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% for (const event of events) { %>
+          <% const client = clientName(event.ip); %>
+          <tr>
+            <td class="nowrap"><%= date(event.time) %></td>
+            <td class="nowrap">
+              <a class="entity-link" href="<%= entityUrl('clients', event.ip) %>" data-client-ip="<%= event.ip %>" title="<%= t('entity.openClient') %>">
+                <span class="client-address"><%= event.ip %></span>
+                <span class="client-host"><%= client %></span>
+              </a>
+            </td>
+            <td>
+              <span class="badge <%= event.direction %>" title="<%= event.direction === 'I' ? t('stats.incoming') : t('stats.sentClient') %>">
+                <%= event.direction === 'I' ? 'I · Entrant' : 'O · Sortant' %>
+              </span>
+            </td>
+            <td class="nowrap"><%= bytes(event.bytes) %></td>
+            <td class="resource"><%= event.resource %></td>
+          </tr>
+        <% } %>
+        <% if (!events.length) { %>
+          <tr>
+            <td colspan="5">
+              <%= t('common.empty') %>
+              <a href="<%= resetUrl %>"><%= t('common.clearFilters') %></a>
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <%- include('pagination') %>
+</section>
+

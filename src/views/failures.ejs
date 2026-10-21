@@ -22,60 +22,19 @@
 <%- include('partials/filters') %>
 
 <section class="panel" id="results">
-  <div class="table-heading"><h3><%= t('nav.failures') %> <span><%= total.toLocaleString(locale) %></span></h3></div>
-  <div class="scroll" tabindex="0" role="region" aria-label="<%= t('table.recentFailures') %>">
-    <table>
-      <thead>
-        <tr>
-          <%- include('partials/sort-header', { column: 'time', label: t('common.date') }) %>
-          <%- include('partials/sort-header', { column: 'ip', label: t('common.client') }) %>
-          <%- include('partials/sort-header', { column: 'statusCode', label: t('common.http') }) %>
-          <%- include('partials/sort-header', { column: 'resource', label: t('common.resource') }) %>
-          <%- include('partials/sort-header', { column: 'reason', label: t('common.reason') }) %>
-        </tr>
-      </thead>
-      <tbody>
-        <% for (const event of events) { %>
-          <% const client = clientName(event.ip); %>
-          <tr>
-            <td class="nowrap"><%= date(event.time) %></td>
-            <td class="nowrap">
-              <a class="entity-link" href="<%= filterUrl({ ip: event.ip }) %>" data-client-ip="<%= event.ip %>" title="<%= t('table.filterClient') %>">
-                <span class="client-address"><%= event.ip %></span>
-                <span class="client-host"><%= client %></span>
-              </a>
-            </td>
-            <td>
-              <% if (event.statusCode) { %>
-                <span class="badge failure-code"><%= event.statusCode %></span>
-              <% } else { %>
-                <span class="meta">—</span>
-              <% } %>
-            </td>
-            <td class="resource"><%= event.resource %></td>
-            <td class="failure-reason">
-              <% if (httpStatusLabel(event.statusCode)) { %>
-                <strong class="http-reason"><%= event.statusCode %> — <%= httpStatusLabel(event.statusCode) %></strong>
-                <span class="failure-detail"><%= eventReason(event) %></span>
-              <% } else { %>
-                <%= eventReason(event) %>
-              <% } %>
-            </td>
-          </tr>
-        <% } %>
-        <% if (!events.length) { %>
-          <tr>
-            <td colspan="5">
-              <%= t('table.noFailures') %>
-              <% if (activeFilters.length) { %>
-                <a href="<%= basePath %>"><%= t('common.clearFilters') %></a>
-              <% } %>
-            </td>
-          </tr>
-        <% } %>
-      </tbody>
-    </table>
+  <div class="table-heading">
+    <h3><%= t(grouped ? 'failureGroups.title' : 'nav.failures') %> <span><%= resultTotal.toLocaleString(locale) %></span></h3>
+    <nav class="failure-views" aria-label="<%= t('failureGroups.view') %>">
+      <% for (const [view, label] of [['groups', 'failureGroups.grouped'], ['events', 'failureGroups.events']]) { %>
+        <a href="<%= filterUrl({ view, page: '', sort: '', order: '' }) %>" data-failure-view="<%= view %>" <%- failureView === view ? 'aria-current="true"' : '' %>><%= t(label) %></a>
+      <% } %>
+    </nav>
   </div>
+  <% if (grouped) { %>
+    <%- include('partials/failure-groups', { rows: groupRows, canSort: true }) %>
+  <% } else { %>
+    <%- include('partials/failure-events') %>
+  <% } %>
   <%- include('partials/pagination') %>
 </section>
 

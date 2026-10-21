@@ -56,13 +56,12 @@
             <% for (const slice of chart.slices) { %>
               <%
                 const client = clientChart && !slice.other ? clientName(slice.name) : '';
-                const filter = clientChart ? { ip: slice.name } : { endpoint: slice.name };
               %>
               <tr data-chart-row="<%= slice.index %>">
                 <td>
                   <span class="chart-swatch chart-color-<%= slice.index %>" aria-hidden="true"></span>
                   <% if (!slice.other) { %>
-                    <a href="<%= filterUrl(filter, '/activity') %>" aria-describedby="<%= chartId %>-tooltip"
+                    <a href="<%= entityUrl(clientChart ? 'clients' : 'endpoints', slice.name) %>" aria-describedby="<%= chartId %>-tooltip"
                       <% if (clientChart) { %>data-client-ip="<%= slice.name %>"<% } %>>
                       <% if (clientChart) { %>
                         <span class="client-address"><%= slice.name %></span>

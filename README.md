@@ -42,14 +42,16 @@ Une bannière signale les nouvelles versions publiées dans le `package.json` de
 | Page | Contenu |
 | --- | --- |
 | Vue d’ensemble | Volumes, courbe d’activité et répartition par client et dépôt |
-| Clients | Volumes transférés, noms DNS et dernière activité |
-| Dépôts | Volumes transférés et dernière activité |
+| Clients | Volumes transférés, noms DNS et fiches individuelles |
+| Dépôts | Volumes transférés et fiches individuelles |
 | Activité | Transferts et ressources demandées |
-| Échecs | Codes HTTP, motifs et ressources concernées |
+| Échecs | Erreurs regroupées, nombre d’occurrences et détail des événements |
 
 Les filtres se mettent à jour automatiquement. Un clic sur une colonne trie le tableau. L’interface propose un thème clair, un thème sombre et une actualisation automatique toutes les 15 secondes.
 
 Le sélecteur de langue utilise les drapeaux français et britannique et mémorise le choix. Les traductions se trouvent dans [`languages/`](languages/).
+
+Cliquer sur un client ou un dépôt ouvre sa fiche : volumes, courbe d’activité, erreurs et derniers transferts. Dans la page des échecs, **Voir les occurrences** affiche les événements du groupe sélectionné.
 
 [Capture de la page des échecs](docs/images/failures.png).
 

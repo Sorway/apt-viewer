@@ -1,4 +1,5 @@
 import { getLanguage } from '../i18n.js';
+import { failureId } from './failures.js';
 
 const filterLabels = {
   ip: 'common.client',
@@ -9,6 +10,7 @@ const filterLabels = {
   to: 'filters.toUtc',
   code: 'common.http',
   period: 'filters.period',
+  error: 'failureGroups.error',
 };
 
 export const periods = { '1h': 3600000, '24h': 86400000, '7d': 604800000 };
@@ -23,7 +25,7 @@ function parseDate(value) {
 
 export function readFilters(query, failures = false) {
   const keys = ['ip', 'endpoint', 'direction', 'q', 'from', 'to', 'period'];
-  if (failures) keys.push('code');
+  if (failures) keys.push('code', 'error');
 
   const filters = {};
   for (const key of keys) {
@@ -41,6 +43,7 @@ export function readFilters(query, failures = false) {
   if (filters.code && !/^(?:[45]\d{2}|unknown)$/.test(filters.code)) {
     throw new InvalidFilterError();
   }
+  if (filters.error && !/^[a-f0-9]{64}$/.test(filters.error)) throw new InvalidFilterError();
   if (filters.period && !Object.hasOwn(periods, filters.period)) throw new InvalidFilterError();
 
   const from = filters.from ? parseDate(filters.from) : -Infinity;
@@ -77,6 +80,7 @@ export function filterEvents(events, filters, now = Date.now()) {
     if (filters.code && filters.code !== 'unknown' && String(event.statusCode) !== filters.code) {
       return false;
     }
+    if (filters.error && failureId(event) !== filters.error) return false;
     return true;
   });
 }
@@ -88,6 +92,8 @@ export function createFilterUrl(filters, basePath) {
       delete values.sort;
       delete values.order;
       delete values.page;
+      delete values.view;
+      delete values.error;
     }
     if (target === '/failures') delete values.direction;
     else delete values.code;
@@ -107,6 +113,7 @@ export function describeFilters(filters, filterUrl, t = getLanguage('fr').t) {
       if (key === 'direction') displayValue = t(value === 'I' ? 'common.incoming' : 'common.outgoing');
       if (key === 'code' && value === 'unknown') displayValue = t('filters.unknown');
       if (key === 'period') displayValue = t({ '1h': 'filters.hour', '24h': 'filters.day', '7d': 'filters.week' }[value]);
+      if (key === 'error') displayValue = t('failureGroups.selected');
 
       return {
         key,

@@ -168,5 +168,22 @@
   "http.502": "Bad Gateway",
   "http.503": "Service Unavailable",
   "http.504": "Gateway Timeout",
-  "units.bytes": "B|KiB|MiB|GiB|TiB|PiB"
+  "units.bytes": "B|KiB|MiB|GiB|TiB|PiB",
+  "failureGroups.title": "Grouped errors",
+  "failureGroups.view": "Error view",
+  "failureGroups.grouped": "Grouped",
+  "failureGroups.events": "Events",
+  "failureGroups.occurrences": "Occurrences",
+  "failureGroups.last": "Last seen",
+  "failureGroups.firstDate": "First seen: {date}",
+  "failureGroups.open": "View occurrences →",
+  "failureGroups.error": "Error",
+  "failureGroups.selected": "Selected",
+  "entity.open": "Open details",
+  "entity.openClient": "Open client details",
+  "entity.client": "Client details",
+  "entity.endpoint": "Repository details",
+  "entity.breadcrumb": "Breadcrumb",
+  "entity.recentTransfers": "Latest transfers",
+  "entity.allErrors": "View all errors →"
 }

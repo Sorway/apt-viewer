@@ -1,0 +1,53 @@
+  <div class="scroll" tabindex="0" role="region" aria-label="<%= t('table.recentFailures') %>">
+    <table>
+      <thead>
+        <tr>
+          <%- include('sort-header', { column: 'time', label: t('common.date') }) %>
+          <%- include('sort-header', { column: 'ip', label: t('common.client') }) %>
+          <%- include('sort-header', { column: 'statusCode', label: t('common.http') }) %>
+          <%- include('sort-header', { column: 'resource', label: t('common.resource') }) %>
+          <%- include('sort-header', { column: 'reason', label: t('common.reason') }) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% for (const event of events) { %>
+          <% const client = clientName(event.ip); %>
+          <tr>
+            <td class="nowrap"><%= date(event.time) %></td>
+            <td class="nowrap">
+              <a class="entity-link" href="<%= entityUrl('clients', event.ip) %>" data-client-ip="<%= event.ip %>" title="<%= t('entity.openClient') %>">
+                <span class="client-address"><%= event.ip %></span>
+                <span class="client-host"><%= client %></span>
+              </a>
+            </td>
+            <td>
+              <% if (event.statusCode) { %>
+                <span class="badge failure-code"><%= event.statusCode %></span>
+              <% } else { %>
+                <span class="meta">—</span>
+              <% } %>
+            </td>
+            <td class="resource"><%= event.resource %></td>
+            <td class="failure-reason">
+              <% if (httpStatusLabel(event.statusCode)) { %>
+                <strong class="http-reason"><%= event.statusCode %> — <%= httpStatusLabel(event.statusCode) %></strong>
+                <span class="failure-detail"><%= eventReason(event) %></span>
+              <% } else { %>
+                <%= eventReason(event) %>
+              <% } %>
+            </td>
+          </tr>
+        <% } %>
+        <% if (!events.length) { %>
+          <tr>
+            <td colspan="5">
+              <%= t('table.noFailures') %>
+              <% if (activeFilters.length) { %>
+                <a href="<%= resetUrl %>"><%= t('common.clearFilters') %></a>
+              <% } %>
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>

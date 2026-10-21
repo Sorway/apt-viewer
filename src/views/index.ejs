@@ -27,30 +27,7 @@
 
 <%- include('partials/filters') %>
 
-<section class="panel timeline-panel" aria-labelledby="timeline-title" data-timeline="<%= JSON.stringify(timeline) %>">
-  <div class="timeline-heading">
-    <h3 id="timeline-title"><%= t('timeline.title') %></h3>
-    <div class="timeline-legend" aria-label="<%= t('timeline.legend') %>">
-      <span class="series-incoming"><%= t('common.incoming') %></span>
-      <span class="series-outgoing"><%= t('common.outgoing') %></span>
-      <span class="series-errors"><%= t('common.errors') %></span>
-    </div>
-  </div>
-  <% if (timeline.empty) { %>
-    <p class="chart-empty meta"><%= t('timeline.empty') %></p>
-  <% } else { %>
-    <div class="timeline-plot">
-      <svg class="timeline-svg" role="img" tabindex="0" aria-labelledby="timeline-title timeline-help"></svg>
-      <span id="timeline-help" class="visually-hidden"><%= t('timeline.help') %></span>
-      <div class="timeline-tooltip" hidden role="status">
-        <strong data-timeline-time></strong>
-        <span class="series-incoming"><%= t('common.incoming') %> <b data-timeline-incoming></b></span>
-        <span class="series-outgoing"><%= t('common.outgoing') %> <b data-timeline-outgoing></b></span>
-        <span class="series-errors"><%= t('common.errors') %> <b data-timeline-errors></b></span>
-      </div>
-    </div>
-  <% } %>
-</section>
+<%- include('partials/timeline') %>
 
 <div class="overview-charts">
   <%- include('partials/activity-chart', {

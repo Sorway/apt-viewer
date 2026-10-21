@@ -1,12 +1,16 @@
 <section class="filter-panel" aria-labelledby="filter-title">
   <div class="filter-heading">
     <h2 id="filter-title"><%= t('filters.title') %></h2>
-    <span><%= total.toLocaleString(locale) %> <%= t(failures ? 'common.failuresLower' : 'common.eventsLower') %></span>
+    <span><%= filterTotal.toLocaleString(locale) %> <%= t(failures ? 'common.failuresLower' : 'common.eventsLower') %></span>
   </div>
   <form method="get" action="<%= basePath %>" class="filters">
     <input type="hidden" name="sort" value="<%= sorting.key %>">
     <input type="hidden" name="order" value="<%= sorting.order %>">
     <input type="hidden" name="period" value="<%= q.period %>">
+    <% if (failures) { %>
+      <input type="hidden" name="view" value="<%= failureView %>">
+      <input type="hidden" name="error" value="<%= q.error %>">
+    <% } %>
     <label class="search-field">
       <span><%= failures ? t('filters.resourceReason') : t('common.resource') %></span>
       <span class="search-control">
@@ -21,6 +25,7 @@
       <kbd aria-hidden="true">/</kbd>
       </span>
     </label>
+    <% if (entity?.key !== 'ip') { %>
     <div class="select-field">
       <label for="client-ip"><%= t('filters.clientIp') %></label>
       <select id="client-ip" name="ip" data-search-select data-search-placeholder="<%= t('filters.searchClient') %>">
@@ -34,6 +39,8 @@
         <% } %>
       </select>
     </div>
+    <% } %>
+    <% if (entity?.key !== 'endpoint') { %>
     <div class="select-field">
       <label for="endpoint-filter"><%= t('common.endpoint') %></label>
       <select id="endpoint-filter" name="endpoint" data-search-select data-search-placeholder="<%= t('filters.searchEndpoint') %>">
@@ -46,6 +53,7 @@
         <% } %>
       </select>
     </div>
+    <% } %>
     <% if (failures) { %>
       <div class="select-field flow-field">
         <label for="http-code"><%= t('filters.httpCode') %></label>
@@ -109,7 +117,7 @@
     </div>
     <div class="filter-actions" <%= activeFilters.length ? '' : 'hidden' %>>
       <% if (activeFilters.length) { %>
-        <a class="button-secondary" data-reset-filters href="<%= basePath %>" aria-label="<%= t('filters.resetAll') %>"><%= t('filters.reset') %></a>
+        <a class="button-secondary" data-reset-filters href="<%= resetUrl %>" aria-label="<%= t('filters.resetAll') %>"><%= t('filters.reset') %></a>
       <% } %>
     </div>
     </div>

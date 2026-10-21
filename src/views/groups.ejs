@@ -20,11 +20,10 @@
         <% for (const row of groupRows) { %>
           <%
             const client = screen === 'clients' ? clientName(row.name) : '';
-            const filter = screen === 'clients' ? { ip: row.name } : { endpoint: row.name };
           %>
           <tr>
             <td>
-              <a class="entity-link" href="<%= filterUrl(filter, '/activity') %>" <% if (screen === 'clients') { %>data-client-ip="<%= row.name %>"<% } %> title="<%= t('table.viewActivity') %>">
+              <a class="entity-link" href="<%= entityUrl(screen, row.name) %>" <% if (screen === 'clients') { %>data-client-ip="<%= row.name %>"<% } %> title="<%= t('entity.open') %>">
                 <span class="client-address"><%= row.name %></span>
                 <% if (screen === 'clients') { %><span class="client-host"><%= client %></span><% } %>
               </a>

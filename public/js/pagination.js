@@ -4,8 +4,11 @@ function setupNavigation() {
   let pending;
 
   function filterKey(url) {
-    return JSON.stringify(['q', 'ip', 'endpoint', 'direction', 'code', 'from', 'to', 'period']
-      .map(key => url.searchParams.get(key) || ''));
+    const values = ['q', 'ip', 'endpoint', 'direction', 'code', 'from', 'to', 'period', 'error']
+      .map(key => url.searchParams.get(key) || '');
+    const view = url.searchParams.get('view') || (url.pathname === '/failures'
+      ? (['time', 'ip'].includes(url.searchParams.get('sort')) ? 'events' : 'groups') : '');
+    return JSON.stringify([...values, view]);
   }
 
   function formUrl() {
@@ -121,7 +124,7 @@ function setupNavigation() {
       }
       updateControls(nextDocument, syncForm);
       const regions = filtersChanged
-        ? ['.cards', '#results', '.timeline-panel', '.overview-charts', '.overview-action', '.read-status']
+        ? ['.cards', '#results', '.timeline-panel', '.entity-failures', '.overview-charts', '.overview-action', '.read-status']
         : ['#results', '.read-status'];
       regions.forEach(selector => replaceRegion(nextDocument, selector));
       replaceRegion(nextDocument, '.filter-heading > span');
@@ -161,7 +164,7 @@ function setupNavigation() {
   document.addEventListener('apt-viewer:filter', event => navigate(new URL(event.detail.url)));
   document.addEventListener('click', event => {
     if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-    const link = event.target.closest('.pagination a[rel], .table-sort, .period-shortcuts a, .filter-chip, [data-reset-filters]');
+    const link = event.target.closest('.pagination a[rel], .table-sort, .period-shortcuts a, .filter-chip, [data-reset-filters], [data-failure-view], [data-error-group]');
     if (!link || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
     const target = new URL(link.href, location.href);
     if (target.origin !== location.origin || target.pathname !== location.pathname) return;
@@ -169,7 +172,15 @@ function setupNavigation() {
     const url = formUrl();
     let syncForm = false;
     if (link.matches('[data-reset-filters]')) {
+      const view = form.elements.namedItem('view')?.value;
       url.search = '';
+      if (view) url.searchParams.set('view', view);
+      syncForm = true;
+    } else if (link.matches('[data-failure-view], [data-error-group]')) {
+      if (!form.reportValidity()) return;
+      url.searchParams.set('view', target.searchParams.get('view'));
+      if (link.matches('[data-error-group]')) url.searchParams.set('error', target.searchParams.get('error'));
+      for (const key of ['sort', 'order', 'page']) url.searchParams.delete(key);
       syncForm = true;
     } else if (link.matches('[data-remove-filter]')) {
       url.searchParams.delete(link.dataset.removeFilter);

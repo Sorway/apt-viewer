@@ -1,0 +1,35 @@
+<div class="scroll failure-groups" tabindex="0" role="region" aria-label="<%= t('failureGroups.title') %>">
+  <table>
+    <thead>
+      <tr>
+        <% for (const [column, label] of [['statusCode', 'common.http'], ['resource', 'common.resource'], ['count', 'failureGroups.occurrences'], ['clientCount', 'nav.clients'], ['last', 'failureGroups.last']]) { %>
+          <% if (canSort) { %>
+            <%- include('sort-header', { column, label: t(label) }) %>
+          <% } else { %>
+            <th scope="col"><%= t(label) %></th>
+          <% } %>
+        <% } %>
+        <th scope="col"><span class="visually-hidden"><%= t('failureGroups.open') %></span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% for (const group of rows) { %>
+        <tr>
+          <td>
+            <% if (group.statusCode) { %><span class="badge failure-code" title="<%= httpStatusLabel(group.statusCode) %>"><%= group.statusCode %></span><% } else { %>—<% } %>
+          </td>
+          <td class="resource failure-reason">
+            <span class="failure-resource"><%= group.resource %></span>
+            <% if (httpStatusLabel(group.statusCode)) { %><strong class="http-reason"><%= httpStatusLabel(group.statusCode) %></strong><% } %>
+            <span class="failure-detail"><%= eventReason(group) %></span>
+          </td>
+          <td class="numeric"><strong><%= group.count.toLocaleString(locale) %></strong></td>
+          <td class="numeric" title="<%= group.clients.join(', ') %>"><%= group.clientCount.toLocaleString(locale) %></td>
+          <td class="nowrap" title="<%= t('failureGroups.firstDate', { date: date(group.first) }) %>"><%= date(group.last) %></td>
+          <td class="nowrap"><a class="button-secondary occurrence-link" data-error-group="<%= group.id %>" href="<%= groupUrl(group.id) %>"><%= t('failureGroups.open') %></a></td>
+        </tr>
+      <% } %>
+      <% if (!rows.length) { %><tr><td colspan="6"><%= t('table.noFailures') %></td></tr><% } %>
+    </tbody>
+  </table>
+</div>
