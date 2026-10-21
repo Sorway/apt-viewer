@@ -29,13 +29,13 @@ Pour changer le chemin du journal ou configurer Nginx, voir le [guide de déploi
 curl -fsSL https://github.com/Sorway/apt-viewer/releases/latest/download/update.sh | sudo bash -s
 ```
 
-La commande récupère le script de la dernière release stable sur GitHub, puis installe cette version. Elle conserve la configuration et sauvegarde l’installation précédente. Si le service ne redémarre pas correctement, celle-ci est restaurée.
+La commande affiche la version installée et la version cible. Si elles sont identiques, elle s’arrête. Avant l’installation, elle vérifie le SHA-256 de l’archive publiée. Elle conserve la configuration et sauvegarde l’installation précédente. Si le service ne redémarre pas correctement, celle-ci est restaurée.
 
-La version installée figure dans le footer. Le menu **Mise à jour** permet de copier la commande.
+La version installée figure dans le footer. Le menu **Mise à jour** affiche la version disponible, la dernière vérification et les éventuelles erreurs GitHub. Il permet aussi de copier la commande.
 
 Une bannière signale les nouvelles releases stables et donne accès à leurs notes de version. La vérification a lieu une fois par heure ; une bannière masquée reste cachée jusqu’à la version suivante. Les brouillons et préversions sont ignorés.
 
-[Choisir une version](docs/deployment.md#choisir-une-version).
+[Choisir une version ou autoriser un retour en arrière](docs/deployment.md#choisir-une-version).
 
 ## Interface
 
@@ -90,6 +90,7 @@ public/
 deploy/           Configuration systemd et Nginx
 docs/             Documentation et captures
 languages/        Traductions .lang en français et en anglais
+scripts/          Préparation des releases et vérifications CI
 install.sh        Installation Linux
 update.sh         Mise à jour
 ```

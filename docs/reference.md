@@ -86,11 +86,24 @@ Les pages `/clients/:ip` et `/endpoints/:depot` réunissent les volumes, la cour
 
 Le serveur interroge `GET https://api.github.com/repos/Sorway/apt-viewer/releases/latest` et compare le tag de la dernière release stable à la version installée. Les tags acceptés sont `vX.Y.Z` et `X.Y.Z` ; les brouillons et préversions sont ignorés. Un commit ou un tag sans release publiée ne déclenche pas la bannière.
 
-Le résultat est mis en cache pendant une heure, avec un délai de réponse maximal de 5 secondes. Une panne réseau ou une limite de l’API conserve le dernier résultat disponible. Une réponse `404` signifie qu’aucune release stable n’est disponible : `latest` et `releaseUrl` valent alors `null`, et `available` vaut `false`.
+Le résultat est mis en cache pendant une heure, avec un délai de réponse maximal de 5 secondes. Une panne réseau ou une limite de l’API conserve la dernière version connue, accompagnée de l’erreur. Une réponse `404` signifie qu’aucune release stable n’est disponible : `latest` et `releaseUrl` valent alors `null`, et `available` vaut `false`.
 
 ```json
-{"current":"1.0.0","latest":"1.1.0","releaseUrl":"https://github.com/Sorway/apt-viewer/releases/tag/v1.1.0","available":true}
+{
+  "current": "1.0.0",
+  "latest": "1.1.0",
+  "releaseUrl": "https://github.com/Sorway/apt-viewer/releases/tag/v1.1.0",
+  "available": true,
+  "checkedAt": "2026-10-21T10:00:00.000Z",
+  "lastSuccessAt": "2026-10-21T10:00:00.000Z",
+  "error": null,
+  "httpStatus": 200
+}
 ```
+
+`checkedAt` indique la fin de la dernière tentative, `lastSuccessAt` le dernier contrôle réussi, y compris une réponse `404`. Les deux dates sont au format ISO 8601 et valent `null` avant le premier contrôle. `httpStatus` contient le statut GitHub, ou `null` si aucune réponse n’a été reçue.
+
+`error` vaut `null`, `NETWORK`, `TIMEOUT`, `RATE_LIMIT`, `HTTP_ERROR`, `INVALID_RESPONSE` ou `INVALID_RELEASE`. Le menu **Mise à jour** affiche la date du contrôle et un message traduit correspondant à cette erreur. Ouvrir le menu consulte l’état du serveur sans contourner son cache d’une heure.
 
 ### Routes
 
@@ -100,7 +113,7 @@ Le résultat est mis en cache pendant une heure, avec un délai de réponse maxi
 | `GET /api/failures` | Filtres, tri, état du lecteur, échecs paginés et nombre d’échecs avec un code HTTP |
 | `GET /api/failure-groups` | Échecs regroupés et paginés : `id`, `count`, `clients`, `clientCount`, `first`, `last`, code, ressource et motif ; `total` compte les occurrences, `groupTotal` les groupes |
 | `GET /api/client-names` | Objet associant les adresses IP aux noms DNS disponibles |
-| `GET /api/version` | Version installée, dernière release stable connue, lien vers ses notes et disponibilité d’une mise à jour |
+| `GET /api/version` | Versions, notes de release, disponibilité, dates de contrôle et erreur GitHub éventuelle |
 | `GET /healthz` | `200` avec `{"ok":true}` si le journal est lisible ; `503` avec `{"ok":false}` sinon |
 
 `/healthz` contrôle la lecture du journal. Il ne vérifie pas le service apt-cacher-ng.

@@ -1243,6 +1243,45 @@ td a:hover {
   font-size: 15px;
   font-weight: 500;
 }
+.update-details {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  font-size: 14px;
+}
+.update-details > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.update-details dt {
+  color: var(--muted);
+}
+.update-details dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.update-state {
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.update-state[data-up-to-date='true'] {
+  color: var(--positive);
+}
+.update-state[data-error='true'] {
+  color: var(--error-text);
+}
+.update-menu-notes {
+  display: inline-block;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--accent);
+}
+.update-menu-notes[hidden] {
+  display: none;
+}
 .update-popover > code {
   display: block;
   padding: 12px;

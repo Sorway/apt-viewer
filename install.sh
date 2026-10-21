@@ -105,18 +105,24 @@ if [[ -z "$source_dir" || ! -f "$source_dir/src/server.js" || ! -f "$source_dir/
   source_dir="$work_dir/source"
   mkdir -- "$source_dir"
   ref="${APT_VIEWER_REF:-latest}"
-  [[ "$ref" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ ]] || fail 'Référence Git invalide.'
-  archive_ref="$ref"
   if [[ "$ref" == latest ]]; then
     release_url=$(curl --fail --silent --show-error --location --head \
       --connect-timeout 10 --max-time 30 --output /dev/null --write-out '%{url_effective}' \
       https://github.com/Sorway/apt-viewer/releases/latest) || fail 'Dernière release stable introuvable sur GitHub.'
     ref="${release_url#https://github.com/Sorway/apt-viewer/releases/tag/}"
-    [[ ${#ref} -le 100 && "$ref" =~ ^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || fail 'Le tag de release doit être au format vX.Y.Z ou X.Y.Z.'
-    archive_ref="refs/tags/$ref"
   fi
-  download "https://codeload.github.com/Sorway/apt-viewer/tar.gz/$archive_ref" "$work_dir/source.tar.gz"
-  tar -xzf "$work_dir/source.tar.gz" --strip-components=1 -C "$source_dir"
+  [[ ${#ref} -le 100 && "$ref" =~ ^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || fail 'Le tag de release doit être au format vX.Y.Z ou X.Y.Z.'
+  archive="apt-viewer-${ref#v}.tar.gz"
+  release_base="https://github.com/Sorway/apt-viewer/releases/download/$ref"
+  download "$release_base/SHA256SUMS" "$work_dir/SHA256SUMS"
+  download "$release_base/$archive" "$work_dir/$archive"
+  expected=$(awk -v name="$archive" '$2 == name && length($1) == 64 && $1 ~ /^[[:xdigit:]]+$/ { print $1 }' "$work_dir/SHA256SUMS")
+  [[ "$expected" =~ ^[[:xdigit:]]{64}$ ]] || fail 'Empreinte SHA-256 absente ou ambiguë.'
+  (
+    cd -- "$work_dir"
+    printf '%s  %s\n' "$expected" "$archive" | sha256sum --check --status
+  ) || fail 'Archive invalide : vérification SHA-256 échouée.'
+  tar -xzf "$work_dir/$archive" --strip-components=1 -C "$source_dir"
 fi
 
 cp -- "$source_dir/package.json" "$source_dir/package-lock.json" "$source_dir/LICENSE" "$stage_dir/"
@@ -142,6 +148,16 @@ download "$node_dist/$node_archive" "$work_dir/$node_archive"
 mkdir -- "$stage_dir/runtime"
 tar -xJf "$work_dir/$node_archive" --strip-components=1 -C "$stage_dir/runtime"
 "$stage_dir/runtime/bin/node" --version
+if [[ -n "${ref:-}" ]]; then
+  if ! "$stage_dir/runtime/bin/node" - "$stage_dir/package.json" "${ref#v}" <<'NODE'
+const { readFileSync } = require('node:fs');
+const pkg = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+if (pkg.name !== 'apt-viewer' || pkg.version !== process.argv[3]) process.exit(1);
+NODE
+  then
+    fail "La version de l’archive ne correspond pas au tag."
+  fi
+fi
 PATH="$stage_dir/runtime/bin:$PATH" "$stage_dir/runtime/bin/npm" ci \
   --prefix "$stage_dir" --omit=dev --ignore-scripts --no-audit --no-fund
 chown -R root:root "$stage_dir"

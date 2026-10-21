@@ -2,14 +2,20 @@ name: CI
 
 on:
   push:
+    branches: ['**']
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    outputs:
+      release-artifact-id:
+        description: Archive et scripts vérifiés sur Linux
+        value: ${{ jobs.linux.outputs.artifact-id }}
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -34,23 +40,37 @@ jobs:
 
       - name: Vérifier les scripts de déploiement
         run: |
-          bash -n install.sh
-          bash -n update.sh
-          shellcheck install.sh update.sh
+          find . -path './node_modules' -prune -o -type f -name '*.sh' -print0 | xargs -0 -r -n 1 bash -n
+          find . -path './node_modules' -prune -o -type f -name '*.sh' -print0 | xargs -0 -r shellcheck
 
       - name: Vérifier la syntaxe JavaScript
         run: |
-          find src public -type f -name '*.js' -print0 | xargs -0 -r -n 1 node --check
+          find src public scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -r -n 1 node --check
+
+      - name: Vérifier les états de mise à jour
+        run: node scripts/ci/verify-updates.mjs
 
   linux:
     name: Installation Linux
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    outputs:
+      artifact-id: ${{ steps.archive.outputs.artifact-id }}
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v7
         with:
           persist-credentials: false
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Préparer l’archive candidate et les releases simulées
+        run: |
+          bash scripts/package-release.sh "$RUNNER_TEMP/release"
+          node scripts/ci/prepare-release.mjs "$RUNNER_TEMP/release" "$RUNNER_TEMP/release-fixture"
 
       - name: Préparer le journal et la configuration
         run: |
@@ -61,12 +81,19 @@ jobs:
 
       - name: Installer puis mettre à jour
         run: |
-          sudo bash install.sh
-          curl --fail http://127.0.0.1:3100/healthz
-          sudo env APT_VIEWER_REF="$GITHUB_SHA" bash /opt/apt-viewer/update.sh
-          sudo cmp /etc/apt-viewer.env /tmp/apt-viewer.env.expected
-          curl --fail http://127.0.0.1:3100/healthz
-          systemctl is-active apt-viewer.service
+          sudo env PATH="$RUNNER_TEMP/release-fixture/bin:$PATH" \
+            APT_VIEWER_FIXTURE_DIR="$RUNNER_TEMP/release-fixture" APT_VIEWER_REF=v0.0.0 \
+            bash "$RUNNER_TEMP/release-fixture/versions/v0.0.0/install.sh"
+          bash scripts/ci/verify-linux-update.sh "$RUNNER_TEMP/release-fixture"
+
+      - name: Conserver les fichiers validés
+        id: archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-candidate-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Afficher les journaux en cas d’échec
         if: failure()

@@ -11,6 +11,13 @@
       <details class="footer-update">
         <summary><%= t('update.menu') %></summary>
         <div class="update-popover">
+          <dl class="update-details">
+            <div><dt><%= t('update.currentLabel') %></dt><dd>v<%= appVersion %></dd></div>
+            <div><dt><%= t('update.latestLabel') %></dt><dd data-latest-version>—</dd></div>
+            <div><dt><%= t('update.checkedLabel') %></dt><dd><time data-update-checked>—</time></dd></div>
+          </dl>
+          <p class="update-state" data-update-state role="status"><%= t('update.checking') %></p>
+          <a class="update-menu-notes" data-update-menu-notes href="https://github.com/Sorway/apt-viewer/releases/latest" target="_blank" rel="noopener noreferrer" hidden><%= t('update.changes') %></a>
           <strong><%= t('update.command') %></strong>
           <code id="update-command" tabindex="0">curl -fsSL https://github.com/Sorway/apt-viewer/releases/latest/download/update.sh | sudo bash -s</code>
           <button type="button" class="button-secondary" data-copy-update hidden>

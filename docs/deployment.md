@@ -18,7 +18,7 @@ sudo bash install.sh
 
 Depuis un clone du dépôt, `sudo bash install.sh` installe le code du checkout local.
 
-Le script installe les dépendances système, Node.js 24 et les dépendances npm. Il crée le compte `apt-viewer`, applique les droits de lecture du journal, puis active le service systemd et vérifie `/healthz`.
+Le script vérifie le SHA-256 de l’archive téléchargée, puis installe les dépendances système, Node.js 24 et les dépendances npm. Il crée le compte `apt-viewer`, applique les droits de lecture du journal, puis active le service systemd et vérifie `/healthz`. Une installation depuis un clone utilise directement les fichiers locaux.
 
 | Emplacement | Usage |
 | --- | --- |
@@ -77,19 +77,27 @@ Adapter le port des commandes si `PORT` a été modifié. Toutes les variables f
 curl -fsSL https://github.com/Sorway/apt-viewer/releases/latest/download/update.sh | sudo bash -s
 ```
 
-La commande télécharge le script joint à la dernière release stable et l’exécute avec sudo. Elle fonctionne aussi si `/opt/apt-viewer/update.sh` est absent ou ancien. Le script installe le code du tag de cette release, Node.js 24, les dépendances et le service. En l’absence de release stable, il s’arrête sans utiliser `master`.
+La commande télécharge le script joint à la dernière release stable et l’exécute avec sudo. Elle fonctionne aussi si `/opt/apt-viewer/update.sh` est absent ou ancien. Le script affiche `version installée → version cible` et s’arrête si la version est déjà installée. Sinon, il vérifie le SHA-256 de l’archive avant de lancer l’installation. En l’absence de release stable, il s’arrête.
 
 La configuration `/etc/apt-viewer.env` est conservée. L’ancienne installation reste dans `/opt/apt-viewer.backup.*`. Si le démarrage ou le contrôle de santé échoue, le script restaure l’installation et l’état du service précédents.
 
 ### Choisir une version
 
-Le script accepte une branche, un tag ou un commit en argument. Sans argument, il utilise `APT_VIEWER_REF` si cette variable est définie, puis la dernière release stable. La valeur `latest` sélectionne explicitement cette release. Les tags stables suivent le format `vX.Y.Z` ou `X.Y.Z`.
+Le script accepte le tag exact d’une release stable : `vX.Y.Z` ou `X.Y.Z`. Sans argument, il utilise `APT_VIEWER_REF` si cette variable est définie, puis la dernière release stable. La valeur `latest` sélectionne explicitement cette release.
 
 ```sh
 curl -fsSL https://github.com/Sorway/apt-viewer/releases/latest/download/update.sh | sudo bash -s -- 1.0.1
 ```
 
-Remplacer `1.0.1` par le tag exact, la branche ou le commit à installer. Une référence explicite permet aussi de revenir à une version précédente.
+Remplacer `1.0.1` par le tag exact à installer. Pour revenir à une version antérieure, ajouter `--allow-downgrade` :
+
+```sh
+curl -fsSL https://github.com/Sorway/apt-viewer/releases/latest/download/update.sh | sudo bash -s -- --allow-downgrade v1.0.1
+```
+
+L’option `--force` réinstalle une version identique. Elle n’autorise pas une rétrogradation.
+
+Chaque release utilisée doit contenir `apt-viewer-X.Y.Z.tar.gz` et `SHA256SUMS`. Les anciennes releases dépourvues de ces fichiers ne sont pas prises en charge par ce script. Les branches et les commits ne sont plus acceptés pour une mise à jour ; pour travailler sur le code, utiliser un clone local.
 
 ### Publier une release
 
@@ -100,7 +108,19 @@ git tag v1.0.2
 git push origin master v1.0.2
 ```
 
-Remplacer `v1.0.2` par la version choisie. Le workflow `Release` vérifie la version et la syntaxe, puis crée la release avec les notes générées et les fichiers `install.sh` et `update.sh`. Un tag seul, sans release publiée, ne déclenche pas la bannière. Les commandes de téléchargement nécessitent une release contenant ces deux fichiers.
+Remplacer `v1.0.2` par la version choisie. Le workflow `Release` exécute d’abord la CI complète sur le commit du tag : vérifications JavaScript et ShellCheck, installation Linux, mise à jour via `latest`, absence de réinstallation à version identique, refus d’une archive altérée et contrôle des rétrogradations.
+
+La CI simule les téléchargements GitHub avec l’archive candidate sur un runner Ubuntu. Elle démarre le vrai service systemd et contrôle `/healthz` ainsi que la conservation de la configuration. Elle ne télécharge pas la candidate depuis une release publique, puisqu’elle n’est pas encore publiée.
+
+Après réussite de tous les contrôles, la publication récupère les mêmes fichiers validés par la CI et vérifie leurs empreintes. Elle crée une release en brouillon, joint les fichiers suivants, puis la publie :
+
+- `apt-viewer-X.Y.Z.tar.gz` : code du commit du tag ;
+- `install.sh` et `update.sh` ;
+- `SHA256SUMS` : empreintes SHA-256 de ces trois fichiers.
+
+Les releases immuables sont activées sur le dépôt GitHub. Les prochaines publications verrouillent leurs tags et fichiers ; les releases antérieures à l’activation restent inchangées. Voir la [documentation GitHub](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/prevent-release-changes).
+
+Un tag seul, sans release publiée, ne déclenche pas la bannière. Le SHA-256 vérifie que l’archive correspond au manifeste téléchargé ; la confiance dans la publication et ses scripts repose sur le dépôt GitHub et HTTPS.
 
 ## Nginx
 

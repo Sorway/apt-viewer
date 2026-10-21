@@ -39,11 +39,15 @@ export function isNewerVersion(latest, current) {
 export function createUpdateChecker(currentVersion, { request = fetch, now = Date.now } = {}) {
   let latest = null;
   let releaseUrl = null;
+  let checkedAt = null;
+  let lastSuccessAt = null;
+  let error = null;
+  let httpStatus = null;
   let nextCheck = 0;
   let pending;
 
   function status() {
-    return { current: currentVersion, latest, releaseUrl, available: isNewerVersion(latest, currentVersion) };
+    return { current: currentVersion, latest, releaseUrl, available: isNewerVersion(latest, currentVersion), checkedAt, lastSuccessAt, error, httpStatus };
   }
 
   return async function check() {
@@ -52,13 +56,17 @@ export function createUpdateChecker(currentVersion, { request = fetch, now = Dat
     nextCheck = now() + checkInterval;
     pending = (async () => {
       try {
+        error = null;
+        httpStatus = null;
         const response = await request(releasesUrl, {
           headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'apt-viewer' },
           signal: AbortSignal.timeout(5000),
         });
+        httpStatus = response.status;
         if (response.status === 404) {
           latest = null;
           releaseUrl = null;
+          lastSuccessAt = new Date(now()).toISOString();
         } else if (response.ok) {
           const info = await response.json();
           const tag = info?.tag_name;
@@ -66,10 +74,19 @@ export function createUpdateChecker(currentVersion, { request = fetch, now = Dat
               typeof tag === 'string' && /^v?\d+\.\d+\.\d+$/.test(tag) && parseVersion(tag)) {
             latest = tag.replace(/^v/, '');
             releaseUrl = `https://github.com/Sorway/apt-viewer/releases/tag/${tag}`;
+            lastSuccessAt = new Date(now()).toISOString();
+          } else {
+            error = 'INVALID_RELEASE';
           }
+        } else {
+          error = response.status === 429 || (response.status === 403 && response.headers?.get('x-ratelimit-remaining') === '0')
+            ? 'RATE_LIMIT' : 'HTTP_ERROR';
         }
-      } catch {
-        // Conserver la dernière vérification si GitHub est inaccessible.
+      } catch (failure) {
+        error = failure?.name === 'TimeoutError' || failure?.name === 'AbortError' ? 'TIMEOUT'
+          : failure instanceof SyntaxError ? 'INVALID_RESPONSE' : 'NETWORK';
+      } finally {
+        checkedAt = new Date(now()).toISOString();
       }
       return status();
     })();
